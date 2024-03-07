@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="description" content="Gummibaerenbande auf Vio-V." />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, shrink-to-fit=no" />
+        <title>{{gangName}} | {{ title }}</title>
+        <link rel="shortcut icon" type="image/x-icon" href="/images/logo.png" />
+        <script defer src="/fontawesome/all.min.js"></script>
+        {{{ style 'vioStyle' }}} {{{ style 'bootstrap.min' }}}
+        <!-- Datatabels -->
+        <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/bs5/jq-3.6.0/dt-1.12.1/datatables.min.css" />
+        <script type="text/javascript" src="https://cdn.datatables.net/v/bs5/jq-3.6.0/dt-1.12.1/datatables.min.js"></script>
+        <script>
+            window.onload = (event) => {
+                let myAlerts = document.querySelectorAll('.toast');
+
+                for (let i = 0; i < myAlerts.length; i++) {
+                    let bsAlert = new bootstrap.Toast(myAlerts[i]);
+                    bsAlert.show();
+                }
+
+                const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+                const tooltipList = [...tooltipTriggerList].map((tooltipTriggerEl) => new bootstrap.Tooltip(tooltipTriggerEl));
+            };
+        </script>
+        {{#> head-block}} {{/head-block}}
+    </head>
+
+    <body>
+        <div aria-live="polite" aria-atomic="true" class="position-relative">
+            <div class="toast-container position-absolute top-0 end-0 p-3 sticky-top">
+                {{#if message.error}}
+                <div id="liveToast" class="toast align-items-center text-white text-bg-danger border-0" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="10000">
+                    <div class="d-flex">
+                        <div class="toast-body">{{{ message.error }}}</div>
+                    </div>
+                </div>
+                {{/if}} {{#if message.success}}
+                <div id="liveToast" class="toast align-items-center text-white text-bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="10000">
+                    <div class="d-flex">
+                        <div class="toast-body">{{{ message.success }}}</div>
+                    </div>
+                </div>
+                {{/if}} {{#if message.info}}
+                <div id="liveToast" class="toast align-items-center text-white text-bg-info border-0" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="10000">
+                    <div class="d-flex">
+                        <div class="toast-body">{{{ message.info }}}</div>
+                    </div>
+                </div>
+                {{/if}}
+            </div>
+        </div>
+        <header class="p-3 mb-3 border-bottom">
+            <div class="container">
+                <div class="d-flex flex-wrap align-items-center justify-content-center justify-content-lg-start">
+                    <a href="/" class="d-flex align-items-center mb-2 mb-lg-0 text-secondary text-decoration-none"> {{{ icon 'logo.png' }}} </a>
+
+                    {{#if isAuthenticated}}
+                    <ul class="nav col-12 col-lg-auto me-lg-auto mb-2 justify-content-center mb-md-0">
+                        <li><a href="/" class="nav-link px-2 link-{{ternary (eq '/' req.originalUrl) 'active' '' }}">Home</a></li>
+                        {{#if (lte account.Role.permissionLevel 15)}}
+                        <li class="nav-item dropdown">
+                            <a
+                                class="nav-link dropdown-toggle {{ternary (isRouteActive '/operations' req.originalUrl) 'active' '' }} "
+                                id="navbarOperations"
+                                role="button"
+                                data-toggle="dropdown"
+                                aria-haspopup="true"
+                                aria-expanded="false"
+                            >
+                                Member
+                            </a>
+                            <div class="dropdown-menu" aria-labelledby="navbarOperations">
+                                <a class="dropdown-item {{ternary (seq '/operations/' req.originalUrl) 'active' '' }}" href="/operations/"> <i class="fas fa-list"></i> Aktionen </a>
+                                {{#if (lte account.Role.permissionLevel 3)}}
+                                <a class="dropdown-item {{ternary (seq '/operations/manage' req.originalUrl) 'active' '' }}" href="/operations/manage"> <i class="fas fa-list"></i> Freigeben </a>
+                                {{/if}}
+                                <a class="dropdown-item {{ternary (isRouteActive '/payment' req.originalUrl) 'active' '' }}" href="/payment"> <i class="fas fa-list"></i> Auszahlung </a>
+                                <a class="dropdown-item {{ternary (isRouteActive '/stats' req.originalUrl) 'active' '' }}" href="/stats"> <i class="fas fa-list"></i> Statistiken </a>
+                            </div>
+                        </li>
+                        {{/if}} {{#if account.Role.isLeader}}
+                        <li class="nav-item dropdown">
+                            <a
+                                class="nav-link dropdown-toggle {{ternary (isRouteActive '/leader' req.originalUrl) 'active' '' }}"
+                                href="#"
+                                id="navbarDropdown"
+                                role="button"
+                                data-toggle="dropdown"
+                                aria-haspopup="true"
+                                aria-expanded="false"
+                            >
+                                Leader
+                            </a>
+                            <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                                <a class="dropdown-item {{ternary (isRouteActive '/leader/users' req.originalUrl) 'active' '' }}" href="/leader/users">
+                                    <i class="fas fa-list"></i> Benutzerverwaltung
+                                </a>
+                                <a class="dropdown-item {{ternary (isRouteActive '/leader/roles' req.originalUrl) 'active' '' }}" href="/leader/roles">
+                                    <i class="fas fa-list"></i> Rollenverwaltung
+                                </a>
+                                <a class="dropdown-item {{ternary (isRouteActive '/leader/operationTypes' req.originalUrl) 'active' '' }}" href="/leader/operationTypes">
+                                    <i class="fas fa-list"></i> Aktionsverwaltung
+                                </a>
+                            </div>
+                        </li>
+                        {{/if}}
+                        <li><a href="/map" class="nav-link px-2 link-{{ternary (eq '/map' req.originalUrl) 'active' '' }}">Map</a></li>
+                    </ul>
+                    {{/if}} {{#if isUnauthenticated}}
+                    <ul class="nav col-12 col-lg-auto me-lg-auto mb-2 justify-content-center mb-md-0">
+                        <li><a href="/login" class="nav-link px-2 link-{{ternary (eq '/login' req.originalUrl) 'active' '' }}">Anmelden</a></li>
+                    </ul>
+                    {{/if}} {{#if isAuthenticated}}
+                    <div class="dropdown text-end">
+                        <a
+                            href="/profile"
+                            class="d-block link-{{ternary (eq '/profile' req.originalUrl) 'active' '' }} text-decoration-none dropdown-toggle"
+                            id="dropdownUser1"
+                            data-bs-toggle="dropdown"
+                            aria-expanded="false"
+                        >
+                            {{{ icon (concat 'https://vio-v.com/app/avatarPicture.php?user=' req.user.name) }}}
+                        </a>
+                        <ul class="dropdown-menu text-small" aria-labelledby="dropdownUser1">
+                            <li><a class="dropdown-item" href="/profile">Profile</a></li>
+                            <li><a class="dropdown-item" href="/settings">Einstellungen</a></li>
+                            <li>
+                                <hr class="dropdown-divider" />
+                            </li>
+                            <li><a class="dropdown-item" href="/logout">Ausloggen</a></li>
+                        </ul>
+                    </div>
+                    {{/if}}
+                </div>
+            </div>
+        </header>
+        {{#> content-block}} {{!-- Content goes here. --}} {{/content-block}}
+        <footer class="py-3 my-4 text-center">
+            <p class="text-muted">
+                Erstellt mit <h onclick="geil(this)">❤️</h> von <a style="text-decoration: none" class="text-primary" href="https://vio-v.com/app/index.php?user/38064">Joel</a> &bull; {{version}}
+            </p>
+        </footer>
+        <script>
+            function geil(e) {
+                e.innerText = 'Copy & Paste';
+            }
+        </script>
+        {{{ script 'bootstrap.bundle.min' true}}}
+    </body>
+</html>

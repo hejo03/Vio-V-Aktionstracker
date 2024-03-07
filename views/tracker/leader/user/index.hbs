@@ -1,0 +1,55 @@
+{{#> layouts/base }} {{#*inline "content-block"}}
+
+<div class="container">
+    <div class="card col-12">
+        <div class="card-header">Benutzerliste</div>
+        <div class="card-body">
+            <table class="table" id="datatables">
+                <thead>
+                    <tr>
+                        <th scope="col">Name</th>
+                        <th scope="col">CharID</th>
+                        <th scope="col">Rang</th>
+                        <th scope="col"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{#each users}}
+                    <tr>
+                        <td>{{this.name}}</td>
+                        <td>{{this.charId}}</td>
+                        <td>{{this.roleName}}</td>
+                        <td>
+                            {{#if this.allowModify}}
+                            <a href="/leader/users/{{this.id}}/delete" class="btn btn-outline-danger float-end m-1"><i class="fa fa-times"></i></a>
+                            <a href="/leader/users/{{this.id}}" class="btn btn-outline-secondary float-end m-1"><i class="fa fa-edit"></i></a>
+                            {{/if}}
+                        </td>
+                    </tr>
+                    {{/each}}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function () {
+        $('#datatables').DataTable({
+            pageLength: 15,
+            lengthMenu: [
+                [15, 50, 100, -1],
+                [15, 50, 100, 'Alle'],
+            ],
+            language: {
+                url: '//cdn.datatables.net/plug-ins/9dcbecd42ad/i18n/German.json',
+            },
+            order: [
+                [2, 'asc'],
+                [3, 'asc'],
+            ],
+        });
+    });
+</script>
+
+{{/inline}} {{/layouts/base}}

@@ -1,0 +1,41 @@
+{{#> layouts/base }} {{#*inline "content-block"}}
+
+<div class="container">
+    <div class="card col-12">
+        <div class="card-header">
+            <div class="card-title">Deine Statistiken</div>
+        </div>
+        <div class="card-body">
+            Aktionen gesamt: {{userAllTimeOperationsCount}}<br />
+            {{!--
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th scope="col">Aktion</th>
+                        <th scope="col">Punkte</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{#each userAllTimeOperations}}
+                    <tr>
+                        <td>{{this.OperationType.name}}</td>
+                        <td>{{this.Points}}</td>
+                    </tr>
+                    {{/each}}
+                </tbody>
+            </table>
+            --}}
+        </div>
+    </div>
+</div>
+<br />
+<div class="container">
+    <div class="card col-12">
+        <div class="card-header">
+            <div class="card-title">Gang Statistiken</div>
+        </div>
+        <div class="card-body">Aktionen gesamt: {{allTimeOperations}}<br /></div>
+    </div>
+</div>
+
+{{/inline}} {{/layouts/base}}

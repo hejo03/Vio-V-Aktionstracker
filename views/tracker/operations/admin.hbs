@@ -1,0 +1,61 @@
+{{#> layouts/base }} {{#*inline "content-block"}}
+
+<div class="container">
+    <div class="card col-12">
+        <div class="card-header">Freigeben</div>
+        <div class="card-body">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th scope="col">#</th>
+                        <th scope="col">Aktion</th>
+                        <th scope="col">Kommentar</th>
+                        <th scope="col">Aktionszeitpunkt</th>
+                        <th scope="col" style="width: 15%">Nachtragen</th>
+                        <th scope="col">Teilnehmer</th>
+                        <th scope="col"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{#each operations}}
+                    <tr>
+                        <td>{{this.id}}</td>
+                        <td>{{this.OperationType.name}}</td>
+                        <td>{{this.comment}}</td>
+                        <td>{{formatTime this.timestamp}}</td>
+                        <td>
+                            <form action="/operations/manage/{{this.id}}/addUser" method="post">
+                                <div class="input-group mb-3">
+                                    <input class="form-control" type="text" name="userName" autocomplete="false" />
+                                    <div class="input-group-append">
+                                        <button class="btn btn-outline-success" type="submit"><i class="fas fa-plus"></i></button>
+                                    </div>
+                                </div>
+                            </form>
+                        </td>
+                        <td>
+                            {{#each this.Users}}
+                            <span class="badge bg-secondary" style="">
+                                <div class="d-flex">
+                                    <div style="margin-right: 5%">{{this.name}}</div>
+                                    <form action="/operations/manage/{{../id}}/removeUser" method="post">
+                                        <input type="hidden" name="userId" value="{{this.id}}" />
+                                        <button type="submit" style="border: 0; outline: 0" class="badge bg-danger">&times;</button>
+                                    </form>
+                                </div>
+                            </span>
+                            {{/each}}
+                        </td>
+                        <td>
+                            <a href="/operations/manage/{{this.id}}/validate" class="btn btn-success"><i class="fa fa-check"></i></a>
+                            <a href="/operations/manage/{{this.id}}/delete" class="btn btn-outline-danger"><i class="fa fa-trash"></i></a>
+                        </td>
+                    </tr>
+                    {{/each}}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{{/inline}} {{/layouts/base}}

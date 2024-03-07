@@ -1,0 +1,90 @@
+{{#> layouts/base }} {{#*inline "content-block"}} {{!--
+<div class="container">
+    <div class="card col-12">
+        <div class="card-header">
+            Aktionsliste
+
+            <a href="/operations/create" class="btn btn-outline-success float-end"><i class="fa fa-plus"></i></a>
+        </div>
+
+        <div class="card-body">
+            <div class="d-flex flex-wrap">
+                {{#each operations}}
+                <div class="card m-1" style="width: 18rem">
+                    <div class="card-header d-flex justify-content-between">
+                        <h5 class="card-title mt-auto mb-auto">{{this.OperationType.name}}</h5>
+                        <form method="post">
+                            <input type="hidden" name="id" value="{{this.id}}" />
+                            {{#if this.isOwnMember}}
+                            <button type="submit" class="btn btn-outline-warning float-end"><i class="fas fa-minus"></i></button>
+                            {{else}}
+                            <button type="submit" class="btn btn-outline-success float-end"><i class="fas fa-plus"></i></button>
+                            {{/if}}
+                        </form>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text text-center">
+                            Zeitpunkt: <b>{{formatTime this.time}}</b><br />
+                            Kommentar: <b>{{this.comment}}</b>
+                        </p>
+
+                        <div class="card-text d-flex flex-wrap justify-content-evenly">
+                            {{#each this.Users}}
+                            <span class="badge bg-secondary m-1">{{this.name}}</span>
+                            {{/each}}
+                        </div>
+                    </div>
+                </div>
+                {{/each}}
+            </div>
+        </div>
+    </div>
+</div>
+<br />
+--}}
+<div class="container">
+    <div class="card col-12">
+        <div class="card-header">
+            Aktionen der letzten 24 Stunden <a href="/operations/create" class="btn btn-outline-success float-end"><i class="fa fa-plus"></i></a>
+        </div>
+
+        <div class="card-body">
+            <table class="table" id="datatables">
+                <thead>
+                    <tr>
+                        {{!--
+                        <th scope="col">#</th>
+                        --}}
+                        <th scope="col">Art</th>
+                        <th scope="col">Kommentar</th>
+                        <th scope="col">Freigegeben</th>
+                        <th scope="col">Zeitpunkt</th>
+                        <th scope="col">Mitglieder</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{#each operations}}
+                    <tr>
+                        {{!--
+                        <td>{{this.id}}</td>
+                        --}}
+                        <td>{{this.OperationType.name}}</td>
+                        <td>{{this.comment}}</td>
+                        <td>{{#if this.valid}}Ja{{else}}Nein{{/if}}</td>
+                        <td>{{formatTime this.time}}</td>
+                        <td>
+                            <div class="card-text d-flex flex-wrap">
+                                {{#each this.Users}}
+                                <span class="badge bg-secondary m-1">{{this.name}}</span>
+                                {{/each}}
+                            </div>
+                        </td>
+                    </tr>
+                    {{/each}}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{{/inline}} {{/layouts/base}}

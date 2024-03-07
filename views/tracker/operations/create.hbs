@@ -1,0 +1,64 @@
+{{#> layouts/base }} {{#*inline "content-block"}}
+
+<div class="container">
+    <div class="card col-12">
+        <div class="card-header">
+            <div class="card-title">
+                Neue Aktion eintragen
+                <a href="/operations" class="btn btn-outline-secondary float-end"><i class="fa fa-arrow-left"></i></a>
+            </div>
+        </div>
+        <div class="card-body">
+            <form method="post">
+                <div class="form-group">
+                    <label for="selectionOperation">Aktion</label>
+                    <select class="form-select" id="selectionOperation" name="operation" required autofocus>
+                        {{#each operationTypes}}
+                        <option value="{{this.id}}">{{this.name}}</option>
+                        {{/each}}
+                    </select>
+                </div>
+                <!--<br>
+                <div class="row">
+                    <div class="col-md-6 col-sm-12">
+                        <div class="form-group">
+                            <label for="inputDate">Datum</label>
+                            <input type="date" class="form-control" id="inputDate" placeholder="" name="date" required>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-sm-12">
+                        <div class="form-group">
+                            <label for="inputTime">Zeit</label>
+                            <input type="time" class="form-control" id="inputTime" placeholder="" name="time" required>
+                        </div>
+                    </div>
+                </div>-->
+                <br />
+                <div class="form-group">
+                    <label for="inputLocation">Kommentar</label>
+                    <input type="text" class="form-control" id="inputLocation" placeholder="" name="comment" />
+                </div>
+                <br />
+                <label>Mitglieder</label>
+                <br /><br />
+                <div class="container">
+                    <div class="row row-cols-2 row-cols-lg-5 g-2 g-lg-3">
+                        {{#each users}}
+                        <div class="col">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="checkbox" id="inlineCheckbox1" name="members" value="{{this.id}}" />
+                                <label class="form-check-label" for="inlineCheckbox1">{{this.name}}</label>
+                            </div>
+                        </div>
+                        {{/each}}
+                    </div>
+                </div>
+
+                <br />
+                <button type="submit" class="btn btn-primary">Eintragen</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+{{/inline}} {{/layouts/base}}

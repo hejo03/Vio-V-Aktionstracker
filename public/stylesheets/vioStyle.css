@@ -1,0 +1,22 @@
+:root {
+   --viov: #b93c36;
+   --nav-bg: #232323;
+   --bg: #191919;
+}
+/* Body */
+.bg-body-tertiary {
+   background-color: var(--bg) !important;
+}
+
+.navbar {
+   background-color: var(--nav-bg);
+}
+
+.dropdown:hover > .dropdown-menu {
+   display: block !important;
+}
+
+.custom-tooltip {
+   --bs-tooltip-bg: var(--bs-dark);
+   --bs-tooltip-color: var(--bs-white);
+}

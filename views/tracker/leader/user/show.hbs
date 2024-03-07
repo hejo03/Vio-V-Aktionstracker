@@ -1,0 +1,42 @@
+{{#> layouts/base }}
+
+{{#*inline "content-block"}}
+
+<div class="container">
+    <div class="card col-12">
+        <div class="card-header">
+            <div class="card-title">
+                Spieler: {{thisUser.name}}
+                <a href="/leader/users" class="btn btn-outline-secondary float-end"><i class="fa fa-arrow-left"></i></a>
+            </div>
+        </div>
+        <div class="card-body">
+            <form method="post">
+                <div class="form-group">
+                    <label for="inputName">Name</label>
+                    <input type="text" class="form-control" id="inputName" placeholder="" name="name"
+                        value="{{thisUser.name}}" required>
+                </div>
+                <br>
+                <div class="form-group">
+                    <label for="selectionRole">Rang</label>
+                    <select class="form-select" id="selectionRole" name="roleId" required>
+                        <option value="-1" {{#unless thisUser.roleId}}selected{{/unless}}>kein Rang</option>
+                        {{#each roles}}
+                        <option value="{{this.id}}" {{#if (eq ../thisUser.roleId this.id)}}selected{{/if}}>{{this.name}} ({{this.permissionLevel}})
+                        </option>
+                        {{/each}}
+                    </select>
+                </div>
+      
+
+                <br>
+                <button type="submit" class="btn btn-primary">Speichern</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+{{/inline}}
+
+{{/layouts/base}}

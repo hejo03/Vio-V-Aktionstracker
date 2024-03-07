@@ -1,0 +1,29 @@
+{{#> layouts/base }} {{#*inline "content-block"}}
+
+<div class="container">
+    <div class="card col-12">
+        <div class="card-header">
+            <div class="card-title">
+                Neuen Aktionstyp erstellen
+                <a href="/leader/operationTypes" class="btn btn-outline-secondary float-end"><i class="fa fa-arrow-left"></i></a>
+            </div>
+        </div>
+        <div class="card-body">
+            <form method="post">
+                <div class="form-group">
+                    <label for="inputName">Name</label>
+                    <input type="text" class="form-control" id="inputName" placeholder="" name="name" required />
+                </div>
+                <br />
+                <div class="form-group">
+                    <label for="inputPoints">Punkte pro Eintrag</label>
+                    <input type="number" min="0" step="1" class="form-control" id=inputPointsinputPermission" placeholder="z.B. 15" name="points" required>
+                </div>
+                <br />
+                <button type="submit" class="btn btn-primary">Erstellen</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+{{/inline}} {{/layouts/base}}

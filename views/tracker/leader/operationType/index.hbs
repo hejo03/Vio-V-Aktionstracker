@@ -1,0 +1,54 @@
+{{#> layouts/base }} {{#*inline "content-block"}}
+
+<div class="container">
+    <div class="card col-12">
+        <div class="card-header">
+            Aktionstypen
+            <a href="/leader/operationTypes/create" class="btn btn-outline-success float-end"><i class="fa fa-plus"></i></a>
+        </div>
+        <div class="card-body">
+            <table class="table" id="datatables">
+                <thead>
+                    <tr>
+                        <th scope="col">#</th>
+                        <th scope="col">Name</th>
+                        <th scope="col">Punkte pro Eintrag</th>
+                        <th scope="col"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{#each roles}}
+                    <tr>
+                        <td>{{this.id}}</td>
+                        <td>{{this.name}}</td>
+                        <td>{{this.points}}</td>
+                        <td>
+                            <a href="/leader/operationTypes/{{this.id}}" class="btn btn-outline-secondary"><i class="fa fa-edit"></i></a>
+                            <a href="/leader/operationTypes/{{this.id}}/delete" class="btn btn-outline-danger"><i class="fa fa-times"></i></a>
+                        </td>
+                    </tr>
+                    {{/each}}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+<script>
+    $(document).ready(function () {
+        $('#datatables').DataTable({
+            pageLength: 15,
+            lengthMenu: [
+                [15, 50, 100, -1],
+                [15, 50, 100, 'Alle'],
+            ],
+            language: {
+                url: '//cdn.datatables.net/plug-ins/9dcbecd42ad/i18n/German.json',
+            },
+            order: [
+                [2, 'asc'],
+                [3, 'asc'],
+            ],
+        });
+    });
+</script>
+{{/inline}} {{/layouts/base}}

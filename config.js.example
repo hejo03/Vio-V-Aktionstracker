@@ -1,0 +1,7 @@
+exports.config = {
+   gangName: 'GANG_NAME',
+   version: '1.0',
+   scopes: ['identify'],
+   logHook: 'YOUR_DISCORD:_WEBHOOK',
+   groupId: YOUR_VIO_GROUP_ID,
+};
