@@ -14,7 +14,7 @@ const CLIENT_ID = process.env.CLIENT_ID;
 const CLIENT_SECRET = process.env.CLIENT_SECRET;
 const redirectUri = process.env.redirectUri;
 const API_URL = 'https://apiv1.vio-v.com';
-const scopes = ['read.self.info', 'read.group.info', 'read.group.members', 'read.group.vehicles'];
+const scopes = ['read.self', 'read.group'];
 
 exports.login = (req, res) => {
    const code_verifier = crypto.randomBytes(60).toString('base64url');
