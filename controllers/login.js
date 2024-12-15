@@ -83,15 +83,23 @@ exports.loginSubmit = async (req, res) => {
       },
    });
 
+   // const group_roles = await fetch(`${API_URL}/api/v3/group/ranks`, {
+   //    method: 'GET',
+   //    headers: {
+   //       authorization: `${token_type} ${access_token}`,
+   //    },
+   // });
+
    const playerData = await self_data.json();
    const groupData = await group_data.json();
    const groupMemberData = await group_members.json();
-
+   // const groupRoleData = await group_roles.json();
+   // console.log(groupRoleData);
    const myGroupData = groupMemberData.find((f) => f.CharacterID == playerData.ID);
 
-   const findRole = await db.models.Role.findOne({ where: { permissionLevel: myGroupData.Rank } });
+   let findRole = await db.models.Role.findOne({ where: { permissionLevel: myGroupData.Rank } });
    if (!findRole) {
-      console.log('No role found for ' + playerData.name);
+      console.log('No role found for ' + playerData.Name);
       await req.flash('error', 'Du bist nicht Mitglied der Fraktion!');
       return res.redirect('/');
    }
@@ -115,6 +123,8 @@ exports.loginSubmit = async (req, res) => {
    } else {
       if (loginUser) {
          loginUser.roleId = null;
+         loginUser.vio_refresh_token = null;
+         loginUser.vio_access_token = null;
          loginUser.save();
       }
       await req.flash('error', 'Du bist nicht Mitglied der Fraktion!');
@@ -122,11 +132,16 @@ exports.loginSubmit = async (req, res) => {
    }
 
    if (loginUser.name !== playerData.Name) loginUser.name = playerData.Name;
-   loginUser.charId = playerData.ID;
    loginUser.roleId = findRole.id;
    loginUser.vio_access_token = access_token;
    loginUser.vio_refresh_token = refresh_token;
-   loginUser.save();
+   await loginUser.save();
+
+   const gwData = await db.models.GWData.findByPk(1);
+   if (gwData && gwData.invalidToken) {
+      gwData.invalidToken = false;
+      await gwData.save();
+   }
 
    auth.setUser(req.session.id, loginUser.id);
    res.redirect(req.session.returnTo || '/');

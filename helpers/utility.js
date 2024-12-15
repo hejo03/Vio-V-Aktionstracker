@@ -1,6 +1,6 @@
 const fetch = require('fetch');
 const { config } = require('../config');
-const { logHook } = config;
+const { logHook, notificationHook, dcMemberRole } = config;
 const { WebhookClient, EmbedBuilder } = require('discord.js');
 
 function generateRandomString(length) {
@@ -53,9 +53,25 @@ async function sendLog(mes = '', type = 0) {
    webhookClient.send({ embeds: [embed], username: 'Tracker Logs' }).catch((err) => console.log(err));
 }
 
+async function sendDiscordNotification(title, description, color = 0x2b2d31) {
+   const webhook = new WebhookClient({ url: notificationHook });
+   if (!webhook) return reject('Webhook invalid.');
+
+   const embed = new EmbedBuilder();
+   embed
+      .setAuthor({ name: 'Gangwar' })
+      .setColor(color)
+
+      .setTimestamp()
+      .setTitle(title)
+      .setDescription(description);
+   webhook.send({ username: 'Aktionstracker', content: `<@&${dcMemberRole}>`, embeds: [embed] });
+}
+
 module.exports = {
    generateRandomString,
    asyncFetch,
    catchAsyncErrors,
    sendLog,
+   sendDiscordNotification,
 };
