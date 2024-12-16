@@ -81,6 +81,7 @@
                                 <a class="dropdown-item {{ternary (isRouteActive '/stats' req.originalUrl) 'active' '' }}" href="/stats"> <i class="fas fa-list"></i> Statistiken </a>
                             </div>
                         </li>
+                        <li><a href="/gwStorage" class="nav-link px-2">Lagerplatz</a></li>
                         {{/if}} {{#if account.Role.isLeader}}
                         <li class="nav-item dropdown">
                             <a

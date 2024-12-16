@@ -32,6 +32,8 @@ router.post('/operations/manage/:id/removeUser', auth.isAuthenticated, operation
 
 router.get('/operations/stats', auth.isAuthenticated, operationController.statisticsIndex);
 
+router.get('/gwStorage', auth.isAuthenticated, dashboardController.calcGWStorage);
+
 /* Profile & Settings System */
 router.get('/profile', auth.isAuthenticated, dashboardController.profile);
 router.get('/stats', auth.isAuthenticated, dashboardController.stats);

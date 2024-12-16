@@ -1,20 +1,29 @@
 let cron = require('node-cron');
 const { sendLog, sendDiscordNotification } = require('../helpers/utility');
-const { fetchOnlinePlayers, getData } = require('./vioHandler');
-const { Op, Sequelize, DataTypes } = require('sequelize');
+const { getData } = require('./vioHandler');
+const { Op } = require('sequelize');
 const db = require('../models').sequelize;
 const moment = require('moment');
 moment.locale('de');
 
-checkGangwarAttacks();
+
 //alle 1min
 cron.schedule(
-   '*/3 * * * *',
+   '*/1 * * * *',
    async () => {
       await checkGangwarAttacks();
    },
    {}
 );
+
+//alle 10min
+//cron.schedule(
+//   '*/10 * * * *',
+//   async () => {
+//      await checkStorageWeight();
+//   },
+//   {}
+//);
 
 const ItemList = {
    0: 'Bargeld',
@@ -100,4 +109,54 @@ async function checkGangwarAttacks() {
 
    gwData.lastData = JSON.stringify(lastData);
    await gwData.save();
+}
+
+async function checkStorageWeight() {
+   const gwData = await db.models.GWData.findByPk(1);
+   if (!gwData) {
+      await db.models.GWData.create({});
+      return;
+   }
+   if (gwData.invalidToken) return;
+
+
+   const findUserWithToken = await db.models.User.findOne({
+      where: { [Op.not]: { vio_refresh_token: null } },
+   });
+
+   if (!findUserWithToken) {
+      gwData.invalidToken = true;
+      await gwData.save();
+      sendLog(`Fehler: Es wurde kein User mit einem gültigem API Token. Bitte auf der Aktionstracker Seite neu anmelden.`, 2);
+      return;
+   }
+
+   const serverItems = await getData(findUserWithToken.id, '/system/items');
+   const storageData = await getData(findUserWithToken.id, '/group/storage');
+   if (!storageData || storageData.length == 0) {
+      console.log('API Call failed');
+      return;
+   }
+
+   let totalWeight = 0;
+   storageData.forEach(item => {
+      const sItem = serverItems[item.item];
+      if(!sItem) return;
+      if (item.Weight)
+         totalWeight += sItem.Weight * item.Amount;
+   });
+
+   if (totalWeight >= storageData[0].MaxWeight) {
+      sendDiscordNotification(
+         `Das Gruppenlager ist voll!`,
+         `> Gesamtgewicht: ${totalWeight}\n> Maximalgewicht: ${storageData[0].MaxWeight}`,
+         0xa83232
+      );
+   } else if ((totalWeight / storageData[0].MaxWeight) * 100 <= 10) {
+      sendDiscordNotification(
+         `Das Gruppenlager ist fast voll!`,
+         `> Gesamtgewicht: ${totalWeight}\n> Maximalgewicht: ${storageData[0].MaxWeight}\n> Prozent: ${Math.floor((totalWeight / storageData[0].MaxWeight) * 100)}%`,
+         0xa83232
+      );
+   }
 }
