@@ -62,17 +62,16 @@ async function checkGangwarAttacks() {
    const allAreas = data.allAreas;
    const ownAreas = data.ownAreas;
 
-   let lastData = JSON.parse(gwData.lastData);
-   if (!lastData) lastData = [];
+   let lastData = gwData.lastData ? JSON.parse(gwData.lastData) : [];
    // console.log(allAreas);
-   console.log(ownAreas);
-   console.log(lastData);
+   // console.log(ownAreas);
+   // console.log(lastData);
 
    //checking:
    ownAreas.forEach((gw) => {
       let gwData = lastData.find((f) => f.ID == gw.ID);
       const index = lastData.findIndex((f) => f.ID == gw.ID);
-      console.log(gw.ID, gwData, index);
+      // console.log(gw.ID, gwData, index);
       if (gwData) {
          if (gwData.LastAttack !== gw.LastAttack) {
             sendDiscordNotification(`Das Gebiet wird gerade angegriffen!`, `> Name: ${gw.Name}\n> Item: ${gw.Amount}x ${ItemList[gw.ItemID]}`, 0xa83232);
@@ -90,10 +89,9 @@ async function checkGangwarAttacks() {
       }
    });
 
-   lastData.forEach(async (gwData) => {
+   for (const gwData of lastData) {
       const search = ownAreas.find((f) => f.ID == gwData.ID);
-      console.log('search', gwData.ID);
-      if (search) return;
+      if (search) continue;
       const objWithIdIndex = lastData.findIndex((obj) => obj.ID === gwData.ID);
 
       if (objWithIdIndex > -1) {
@@ -109,12 +107,12 @@ async function checkGangwarAttacks() {
             );
          lastData.splice(objWithIdIndex, 1);
       }
-   });
+   }
 
    gwData.lastCheck = moment(new Date()).toDate();
    gwData.lastData = JSON.stringify(lastData);
-   console.log(gwData.lastData);
-   await gwData.save();
+
+   await gwData.save().catch((error) => console.error('Fehler beim Speichern:', error));
 }
 
 async function checkStorageWeight() {
