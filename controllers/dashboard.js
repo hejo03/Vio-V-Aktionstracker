@@ -129,9 +129,9 @@ exports.calcGWStorage = async (req, res) => {
   
       // Berechne die Zeit bis zur vollen Kapazität in Stunden
       if (weightPerHour > 0) {
-          return remainingCapacity / weightPerHour;
+          return Math.floor(remainingCapacity / weightPerHour);
       } else {
-          return Infinity; // Wenn keine Items pro Stunde hinzugefügt werden, wird das Lager nie voll
+          return -1; // Wenn keine Items pro Stunde hinzugefügt werden, wird das Lager nie voll
       }
   }
 
