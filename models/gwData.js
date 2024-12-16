@@ -14,6 +14,7 @@ module.exports = (sequelize, DataTypes) => {
          lastCheck: DataTypes.DATE,
          lastData: DataTypes.TEXT('long'),
          invalidToken: { type: DataTypes.BOOLEAN, defaultValue: false },
+         notifyFullStorage: { type: DataTypes.BOOLEAN, defaultValue: false },
       },
       {
          sequelize,

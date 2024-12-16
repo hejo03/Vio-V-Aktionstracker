@@ -6,7 +6,8 @@ const db = require('../models').sequelize;
 const moment = require('moment');
 moment.locale('de');
 
-
+// checkGangwarAttacks();
+checkStorageWeight();
 //alle 1min
 cron.schedule(
    '*/1 * * * *',
@@ -16,14 +17,14 @@ cron.schedule(
    {}
 );
 
-//alle 10min
-//cron.schedule(
-//   '*/10 * * * *',
-//   async () => {
-//      await checkStorageWeight();
-//   },
-//   {}
-//);
+// alle 60min
+cron.schedule(
+   '*/60 * * * *',
+   async () => {
+      await checkStorageWeight();
+   },
+   {}
+);
 
 const ItemList = {
    0: 'Bargeld',
@@ -41,8 +42,6 @@ async function checkGangwarAttacks() {
       return;
    }
    if (gwData.invalidToken) return;
-   gwData.lastCheck = moment(new Date()).toDate();
-   await gwData.save();
 
    const findUserWithToken = await db.models.User.findOne({
       where: { [Op.not]: { vio_refresh_token: null } },
@@ -60,19 +59,20 @@ async function checkGangwarAttacks() {
       console.log('API Call failed');
       return;
    }
-   // const allAreas = data.allAreas;
+   const allAreas = data.allAreas;
    const ownAreas = data.ownAreas;
 
    let lastData = JSON.parse(gwData.lastData);
    if (!lastData) lastData = [];
    // console.log(allAreas);
-   // console.log(ownAreas);
-   // console.log(lastData);
+   console.log(ownAreas);
+   console.log(lastData);
 
    //checking:
    ownAreas.forEach((gw) => {
       let gwData = lastData.find((f) => f.ID == gw.ID);
       const index = lastData.findIndex((f) => f.ID == gw.ID);
+      console.log(gw.ID, gwData, index);
       if (gwData) {
          if (gwData.LastAttack !== gw.LastAttack) {
             sendDiscordNotification(`Das Gebiet wird gerade angegriffen!`, `> Name: ${gw.Name}\n> Item: ${gw.Amount}x ${ItemList[gw.ItemID]}`, 0xa83232);
@@ -90,24 +90,30 @@ async function checkGangwarAttacks() {
       }
    });
 
-   lastData.forEach((gwData) => {
+   lastData.forEach(async (gwData) => {
       const search = ownAreas.find((f) => f.ID == gwData.ID);
+      console.log('search', gwData.ID);
       if (search) return;
       const objWithIdIndex = lastData.findIndex((obj) => obj.ID === gwData.ID);
 
       if (objWithIdIndex > -1) {
-         const memberlist = getData(findUserWithToken.id, '/group/members');
+         const memberlist = await getData(findUserWithToken.id, '/group/members');
+         if (!memberlist) return;
          const onlinePlayers = memberlist.filter((f) => f.Online == 1);
-         sendDiscordNotification(
-            `Das Gebiet wurde eingenommen!`,
-            `> Name: ${gwData.Name}\n> Item: ${gwData.Amount}x ${ItemList[gwData.ItemID]}\n${onlinePlayers == 0 ? `\n> Status: Offlineattack` : ``}`,
-            0xa83232
-         );
+         const data = allAreas.find((f) => f.ID == gwData.ID);
+         if (data)
+            sendDiscordNotification(
+               `Das Gebiet wurde eingenommen!`,
+               `> Name: ${data.Name}\n> Item: ${data.Amount}x ${ItemList[data.ItemID]}\n${onlinePlayers == 0 ? `\n> Status: Offlineattack` : ``}`,
+               0xa83232
+            );
          lastData.splice(objWithIdIndex, 1);
       }
    });
 
+   gwData.lastCheck = moment(new Date()).toDate();
    gwData.lastData = JSON.stringify(lastData);
+   console.log(gwData.lastData);
    await gwData.save();
 }
 
@@ -118,7 +124,6 @@ async function checkStorageWeight() {
       return;
    }
    if (gwData.invalidToken) return;
-
 
    const findUserWithToken = await db.models.User.findOne({
       where: { [Op.not]: { vio_refresh_token: null } },
@@ -133,29 +138,35 @@ async function checkStorageWeight() {
 
    const serverItems = await getData(findUserWithToken.id, '/system/items');
    const storageData = await getData(findUserWithToken.id, '/group/storage');
+
    if (!storageData || storageData.length == 0) {
       console.log('API Call failed');
       return;
    }
 
    let totalWeight = 0;
-   storageData.forEach(item => {
-      const sItem = serverItems[item.item];
-      if(!sItem) return;
-      if (item.Weight)
-         totalWeight += sItem.Weight * item.Amount;
+   storageData.map((item) => {
+      const sItem = serverItems.find((i) => i.ID === item.item);
+      if (!sItem) return;
+      if (sItem.Weight) totalWeight = totalWeight + sItem.Weight * item.amount;
+      return item;
    });
+   const percentage = (totalWeight / storageData[0].maxWeight) * 100;
 
-   if (totalWeight >= storageData[0].MaxWeight) {
-      sendDiscordNotification(
-         `Das Gruppenlager ist voll!`,
-         `> Gesamtgewicht: ${totalWeight}\n> Maximalgewicht: ${storageData[0].MaxWeight}`,
-         0xa83232
-      );
-   } else if ((totalWeight / storageData[0].MaxWeight) * 100 <= 10) {
+   if (percentage < 80) {
+      gwData.notifyFullStorage = false;
+      gwData.save();
+      return;
+   }
+   if (totalWeight == 0) return;
+   if (totalWeight >= storageData[0].maxWeight) {
+      if (gwData.notifyFullStorage) return; //Nachricht bereits gesendet
+      sendDiscordNotification(`Das Gruppenlager ist voll!`, `> Gesamtgewicht: ${Math.floor(totalWeight)}\n> Maximalgewicht: ${storageData[0].maxWeight}`, 0xa83232);
+   } else if (percentage >= 90) {
+      if (gwData.notifyFullStorage) return; //Nachricht bereits gesendet
       sendDiscordNotification(
          `Das Gruppenlager ist fast voll!`,
-         `> Gesamtgewicht: ${totalWeight}\n> Maximalgewicht: ${storageData[0].MaxWeight}\n> Prozent: ${Math.floor((totalWeight / storageData[0].MaxWeight) * 100)}%`,
+         `> Gesamtgewicht: ${Math.floor(totalWeight)}\n> Maximalgewicht: ${storageData[0].maxWeight}\n> Prozent: ${Math.floor(percentage)}%`,
          0xa83232
       );
    }
