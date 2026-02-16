@@ -14,9 +14,9 @@ services:
       env_file: .env
       labels:
          - "traefik.enable=true"
-         - "traefik.http.routers.viowerte.rule=Host(`${DOMAIN}`)"
-         - "traefik.http.routers.viowerte.entrypoints=websecure"
-         - "traefik.http.routers.viowerte.tls=true"
+         - "traefik.http.routers.tracker.rule=Host(`${DOMAIN}`)"
+         - "traefik.http.routers.tracker.entrypoints=websecure"
+         - "traefik.http.routers.tracker.tls=true"
       networks:
          - internal
          - web
@@ -26,38 +26,37 @@ services:
          - '/etc/localtime:/etc/localtime:ro'
          - '/etc/timezone:/etc/timezone:ro'
 
-   mysql-db:
+   mysql-db-tracker:
       image: mysql:8.0
       container_name: mysql-db-tracker
       restart: unless-stopped
-      #ports:
-      #  - 3306:3306
+      env_file: .env
       environment:
-         MYSQL_ROOT_PASSWORD: '${DB_PASSWORD}'
-         MYSQL_DATABASE: '${DB_DATABASE}'
+         MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+         MYSQL_DATABASE: ${DB_DATABASE}
          MYSQL_ROOT_HOST: '%'
-         TZ: 'Europe/Berlin'
+         TZ: Europe/Berlin
       networks:
          - internal
       labels:
          - traefik.enable=false
       volumes:
-         - 'mysql-data:/var/lib/mysql'
+         - mysql-data:/var/lib/mysql
 
-   mysql-backup:
+   mysql-backup-tracker:
       image: fradelg/mysql-cron-backup
       container_name: mysql-backup-tracker
       restart: unless-stopped
       env_file: .env
       environment:
-         MYSQL_HOST: ${DB_HOST}
+         MYSQL_HOST: mysql-db
          MYSQL_PORT: 3306
          MYSQL_USER: ${DB_USERNAME}
          MYSQL_PASS: ${DB_PASSWORD}
-         MYSQL_DB: ${DB_HOST}
-         CRON_TIME: '0 3 * * *' # jeden Tag um 03:00 Uhr
+         MYSQL_DB: ${DB_DATABASE}
+         CRON_TIME: '0 3 * * *'
          MAX_BACKUPS: 3
-         GZIP_BACKUP: true # gzip komprimieren
+         GZIP_BACKUP: true
          TZ: Europe/Berlin
       volumes:
          - ./db-backups:/backup
@@ -67,4 +66,3 @@ services:
          - internal
 
 volumes:
-   mysql-data:
