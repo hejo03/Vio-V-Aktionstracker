@@ -1,0 +1,70 @@
+networks:
+   web:
+      external: true
+   internal:
+      external: false
+
+services:
+   tracker:
+      build:
+         context: .
+         dockerfile: Dockerfile
+      container_name: tracker
+      restart: unless-stopped
+      env_file: .env
+      labels:
+         - "traefik.enable=true"
+         - "traefik.http.routers.viowerte.rule=Host(`${DOMAIN}`)"
+         - "traefik.http.routers.viowerte.entrypoints=websecure"
+         - "traefik.http.routers.viowerte.tls=true"
+      networks:
+         - internal
+         - web
+      depends_on:
+         - mysql-db
+      volumes:
+         - '/etc/localtime:/etc/localtime:ro'
+         - '/etc/timezone:/etc/timezone:ro'
+
+   mysql-db:
+      image: mysql:8.0
+      container_name: mysql-db
+      restart: unless-stopped
+      #ports:
+      #  - 3306:3306
+      environment:
+         MYSQL_ROOT_PASSWORD: '${DB_PASSWORD}'
+         MYSQL_DATABASE: '${DB_DATABASE}'
+         MYSQL_ROOT_HOST: '%'
+         TZ: 'Europe/Berlin'
+      networks:
+         - internal
+      labels:
+         - traefik.enable=false
+      volumes:
+         - 'mysql-data:/var/lib/mysql'
+
+   mysql-backup:
+      image: fradelg/mysql-cron-backup
+      container_name: mysql-backup
+      restart: unless-stopped
+      env_file: .env
+      environment:
+         MYSQL_HOST: ${DB_HOST}
+         MYSQL_PORT: 3306
+         MYSQL_USER: ${DB_USERNAME}
+         MYSQL_PASS: ${DB_PASSWORD}
+         MYSQL_DB: ${DB_HOST}
+         CRON_TIME: '0 3 * * *' # jeden Tag um 03:00 Uhr
+         MAX_BACKUPS: 3
+         GZIP_BACKUP: true # gzip komprimieren
+         TZ: Europe/Berlin
+      volumes:
+         - ./db-backups:/backup
+      depends_on:
+         - mysql-db
+      networks:
+         - internal
+
+volumes:
+   mysql-data:

@@ -31,6 +31,7 @@ const ItemList = {
    5: '40%tiges Methylamin',
    10: 'Metallteile',
    17: 'Gold',
+   22: 'Hanf-Steckling',
    23: 'Hanf',
    64: 'Markiertes Geld',
 };
