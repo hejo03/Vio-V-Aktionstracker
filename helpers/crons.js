@@ -2,7 +2,6 @@ let cron = require('node-cron');
 const { sendLog, sendDiscordNotification } = require('../helpers/utility');
 const { getData } = require('./vioHandler');
 const { Op } = require('sequelize');
-const { config } = require('../config');
 const db = require('../models').sequelize;
 const moment = require('moment');
 moment.locale('de');
@@ -76,7 +75,7 @@ async function checkGangwarAttacks() {
       // console.log(gw.ID, gwData, index);
       if (gwData) {
          if (gwData.LastAttack !== gw.LastAttack) {
-            sendDiscordNotification(config.CUSTOM_ATTACK_MESSAGE, `> Name: ${gw.Name}\n> Item: ${gw.Amount}x ${ItemList[gw.ItemID]}`, 0xa83232);
+            sendDiscordNotification(`Das Gebiet wird gerade angegriffen!`, `> Name: ${gw.Name}\n> Item: ${gw.Amount}x ${ItemList[gw.ItemID]}`, 0xa83232);
             gwData = { ID: gw.ID, LastAttack: gw.LastAttack };
             lastData[index] = gwData;
          }
