@@ -62,7 +62,6 @@ exports.loginSubmit = async (req, res) => {
    }
 
    const { access_token, token_type, refresh_token } = await token_data.json();
-   // console.log({ token_data: await token_data.json() });
 
    const self_data = await fetch(`${API_URL}/api/v3/self`, {
       method: 'GET',
@@ -83,19 +82,33 @@ exports.loginSubmit = async (req, res) => {
       },
    });
 
-   // const group_roles = await fetch(`${API_URL}/api/v3/group/ranks`, {
-   //    method: 'GET',
-   //    headers: {
-   //       authorization: `${token_type} ${access_token}`,
-   //    },
-   // });
-
    const playerData = await self_data.json();
    const groupData = await group_data.json();
    const groupMemberData = await group_members.json();
-   // const groupRoleData = await group_roles.json();
-   // console.log(groupRoleData);
+
    const myGroupData = groupMemberData.find((f) => f.CharacterID == playerData.ID);
+
+   //SETUP ROLES
+   const roleCount = await db.models.Role.count();
+   if (config.groupId == groupData[0].ID && roleCount == 0) {
+      const group_roles = await fetch(`${API_URL}/api/v3/group/ranks`, {
+         method: 'GET',
+         headers: {
+            authorization: `${token_type} ${access_token}`,
+         },
+      });
+      const groupRoleData = await group_roles.json();
+      console.log(groupRoleData);
+
+      groupRoleData.forEach(async (role) => {
+         await db.models.Role.create({
+            name: role.Name,
+            permissionLevel: role.RankID,
+            isLeader: role.Leader,
+         });
+         console.log(`${role.Name} wurde erstellt`);
+      });
+   }
 
    let findRole = await db.models.Role.findOne({ where: { permissionLevel: myGroupData.Rank } });
    if (!findRole) {

@@ -49,7 +49,7 @@ services:
       restart: unless-stopped
       env_file: .env
       environment:
-         MYSQL_HOST: mysql-db
+         MYSQL_HOST: mysql-db-tracker
          MYSQL_PORT: 3306
          MYSQL_USER: ${DB_USERNAME}
          MYSQL_PASS: ${DB_PASSWORD}
