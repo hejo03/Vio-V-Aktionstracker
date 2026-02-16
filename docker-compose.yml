@@ -28,7 +28,7 @@ services:
 
    mysql-db:
       image: mysql:8.0
-      container_name: mysql-db
+      container_name: mysql-db-tracker
       restart: unless-stopped
       #ports:
       #  - 3306:3306
@@ -46,7 +46,7 @@ services:
 
    mysql-backup:
       image: fradelg/mysql-cron-backup
-      container_name: mysql-backup
+      container_name: mysql-backup-tracker
       restart: unless-stopped
       env_file: .env
       environment:
