@@ -76,7 +76,7 @@ async function checkGangwarAttacks() {
       // console.log(gw.ID, gwData, index);
       if (gwData) {
          if (gwData.LastAttack !== gw.LastAttack) {
-            sendDiscordNotification(config.CUSTOM_ATTACK_MESSAGE, `> Name: ${gw.Name}\n> Item: ${gw.Amount}x ${ItemList[gw.ItemID]}`, 0xa83232);
+            sendDiscordNotification(config.CUSTOM_ATTACK_MESSAGE, `> Name: ${gw.Name}\n> Item: ${gw.Amount}x ${ItemList[gw.ItemID]}`, 0xa83232, true);
             gwData = { ID: gw.ID, LastAttack: gw.LastAttack };
             lastData[index] = gwData;
          }
@@ -86,7 +86,8 @@ async function checkGangwarAttacks() {
          sendDiscordNotification(
             `Das Gebiet wurde erfolgreich eingenommen!`,
             `> Name: ${gw.Name}\n> Item: ${gw.Amount}x ${ItemList[gw.ItemID]}\n> Besitzer: ${gw.OldOwnerName}`,
-            0x00a800
+            0x00a800,
+            false
          );
       }
    });
@@ -106,7 +107,7 @@ async function checkGangwarAttacks() {
                `Das Gebiet wurde eingenommen!`,
                `> Name: ${data.Name}\n> Item: ${data.Amount}x ${ItemList[data.ItemID]}\n${onlinePlayers == 0 ? `\n> Status: Offlineattack` : ``}`,
                0xa83232,
-               true
+               false
             );
          lastData.splice(objWithIdIndex, 1);
       }
