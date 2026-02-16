@@ -21,7 +21,7 @@ services:
          - internal
          - web
       depends_on:
-         - mysql-db
+         - mysql-db-tracker
       volumes:
          - '/etc/localtime:/etc/localtime:ro'
          - '/etc/timezone:/etc/timezone:ro'
@@ -61,7 +61,7 @@ services:
       volumes:
          - ./db-backups:/backup
       depends_on:
-         - mysql-db
+         - mysql-db-tracker
       networks:
          - internal
 
