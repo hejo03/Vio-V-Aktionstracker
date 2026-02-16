@@ -66,3 +66,4 @@ services:
          - internal
 
 volumes:
+   mysql-data:
