@@ -1,3 +1,4 @@
+require('dotenv').config();
 exports.config = {
    gangName: process.env.GANG_NAME || 'GANG_NAME',
    version: '1.0',
