@@ -105,7 +105,8 @@ async function checkGangwarAttacks() {
             sendDiscordNotification(
                `Das Gebiet wurde eingenommen!`,
                `> Name: ${data.Name}\n> Item: ${data.Amount}x ${ItemList[data.ItemID]}\n${onlinePlayers == 0 ? `\n> Status: Offlineattack` : ``}`,
-               0xa83232
+               0xa83232,
+               true
             );
          lastData.splice(objWithIdIndex, 1);
       }
@@ -161,13 +162,14 @@ async function checkStorageWeight() {
    if (totalWeight == 0) return;
    if (totalWeight >= storageData[0].maxWeight) {
       if (gwData.notifyFullStorage) return; //Nachricht bereits gesendet
-      sendDiscordNotification(`Das Gruppenlager ist voll!`, `> Gesamtgewicht: ${Math.floor(totalWeight)}\n> Maximalgewicht: ${storageData[0].maxWeight}`, 0xa83232);
+      sendDiscordNotification(`Das Gruppenlager ist voll!`, `> Gesamtgewicht: ${Math.floor(totalWeight)}\n> Maximalgewicht: ${storageData[0].maxWeight}`, 0xa83232, false);
    } else if (percentage >= 90) {
       if (gwData.notifyFullStorage) return; //Nachricht bereits gesendet
       sendDiscordNotification(
          `Das Gruppenlager ist fast voll!`,
          `> Gesamtgewicht: ${Math.floor(totalWeight)}\n> Maximalgewicht: ${storageData[0].maxWeight}\n> Prozent: ${Math.floor(percentage)}%`,
-         0xa83232
+         0xa83232,
+         false
       );
    }
 }
