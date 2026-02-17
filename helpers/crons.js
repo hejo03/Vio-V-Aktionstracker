@@ -8,7 +8,7 @@ const moment = require('moment');
 moment.locale('de');
 
 // checkGangwarAttacks();
-checkStorageWeight();
+// checkStorageWeight();
 //alle 1min
 cron.schedule(
    '*/1 * * * *',
@@ -32,6 +32,7 @@ const ItemList = {
    5: '40%tiges Methylamin',
    10: 'Metallteile',
    17: 'Gold',
+   21: 'Schwarzpulver',
    22: 'Hanf-Steckling',
    23: 'Hanf',
    64: 'Markiertes Geld',
@@ -73,10 +74,18 @@ async function checkGangwarAttacks() {
    ownAreas.forEach((gw) => {
       let gwData = lastData.find((f) => f.ID == gw.ID);
       const index = lastData.findIndex((f) => f.ID == gw.ID);
-      // console.log(gw.ID, gwData, index);
+      console.log(gw.ID, gwData, index);
+
       if (gwData) {
          if (gwData.LastAttack !== gw.LastAttack) {
-            sendDiscordNotification(config.CUSTOM_ATTACK_MESSAGE, `> Name: ${gw.Name}\n> Item: ${gw.Amount}x ${ItemList[gw.ItemID]}`, 0xa83232, true);
+            console.log(`ATTACK ${gw.Name}`);
+            console.log(config.CUSTOM_ATTACK_MESSAGE);
+            sendDiscordNotification(
+               config.CUSTOM_ATTACK_MESSAGE,
+               `> Name: ${gw.Name}\n> Item: ${gw.Amount}x ${ItemList[gw.ItemID] ? ItemList[gw.ItemID] : gw.ItemID}`,
+               0xa83232,
+               true
+            );
             gwData = { ID: gw.ID, LastAttack: gw.LastAttack };
             lastData[index] = gwData;
          }
@@ -85,7 +94,7 @@ async function checkGangwarAttacks() {
          lastData.push(newGW);
          sendDiscordNotification(
             `Das Gebiet wurde erfolgreich eingenommen!`,
-            `> Name: ${gw.Name}\n> Item: ${gw.Amount}x ${ItemList[gw.ItemID]}\n> Besitzer: ${gw.OldOwnerName}`,
+            `> Name: ${gw.Name}\n> Item: ${gw.Amount}x ${ItemList[gw.ItemID] ? ItemList[gw.ItemID] : gw.ItemID}\n> Besitzer: ${gw.OldOwnerName}`,
             0x00a800,
             false
          );
@@ -105,7 +114,7 @@ async function checkGangwarAttacks() {
          if (data)
             sendDiscordNotification(
                `Das Gebiet wurde eingenommen!`,
-               `> Name: ${data.Name}\n> Item: ${data.Amount}x ${ItemList[data.ItemID]}\n${onlinePlayers == 0 ? `\n> Status: Offlineattack` : ``}`,
+               `> Name: ${data.Name}\n> Item: ${data.Amount}x ${ItemList[gw.ItemID] ? ItemList[gw.ItemID] : gw.ItemID}\n${onlinePlayers == 0 ? `\n> Status: Offlineattack` : ``}`,
                0xa83232,
                false
             );
