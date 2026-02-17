@@ -3,100 +3,107 @@ const app = require('../app');
 const http = require('http');
 const db = require('../models');
 const { sendLog } = require('../helpers/utility');
-const config = require('../config');
 require('dotenv').config();
-
-process.on('unhandledRejection', (err) => {
-   //    sendDiscordNotification('Fehler', `new Error: \n\n\`\`\`${err}\`\`\``);
-
-   console.log('=== UNHANDLED REJECTION ===');
-   console.log(err);
-});
-
-process.on('uncaughtException', (error) => {
-   //    sendDiscordNotification('Fehler', `new Error: \n\n\`\`\`${error}\`\`\``);
-
-   console.log('=== UNHANDLED Exception ===');
-   console.log(error);
-});
-
-/**
- * Get port from environment and store in Express.
- */
 
 const port = normalizePort(process.env.PORT || '3000');
 app.set('port', port);
 
-/**
- * Create HTTP server.
- */
-
 const server = http.createServer(app);
 
-/**
- * Listen on provided port, on all network interfaces.
- */
+const gracefulShutdown = (signal) => {
+   console.log(`\n${signal} received: closing server...`);
 
-db.sequelize.sync({ alter: true, force: false }).then(() => {
-   server.listen(port);
-   server.on('error', onError);
-   server.on('listening', onListening);
+   server.close(async (err) => {
+      if (err) {
+         console.error('Server close error:', err);
+         process.exit(1);
+      }
+
+      try {
+         await db.sequelize.close();
+         console.log('DB connection closed.');
+         process.exit(0);
+      } catch (dbErr) {
+         console.error('DB close error:', dbErr);
+         process.exit(1);
+      }
+   });
+
+   setTimeout(() => {
+      console.error('Force shutdown after timeout');
+      process.exit(1);
+   }, 10000);
+};
+
+process.on('unhandledRejection', (reason, promise) => {
+   console.error('=== UNHANDLED REJECTION ===');
+   console.error('Promise:', promise);
+   console.error('Reason:', reason);
+   sendLog(reason, 2);
 });
 
-/**
- * Normalize a port into a number, string, or false.
- */
+process.on('uncaughtException', (error) => {
+   console.error('=== UNCAUGHT EXCEPTION ===');
+   console.error(error);
+   sendLog(error, 2);
+   process.exit(1);
+});
+
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+
+db.sequelize
+   .sync({ alter: true, force: false })
+   .then(async () => {
+      server.listen(port, () => {
+         const addr = server.address();
+         const bind = typeof addr === 'string' ? `pipe ${addr}` : `port ${addr.port}`;
+         console.log(`✅ Server listening on ${bind}`);
+         console.log(`   PID: ${process.pid}`);
+
+         try {
+            require('../helpers/crons');
+            console.log('✅ Cron jobs loaded');
+         } catch (cronErr) {
+            console.error('❌ Cron jobs failed:', cronErr);
+         }
+      });
+
+      server.on('error', onError);
+   })
+   .catch((syncErr) => {
+      console.error('❌ DB sync failed:', syncErr);
+      process.exit(1);
+   });
 
 function normalizePort(val) {
    const port = parseInt(val, 10);
-
-   if (isNaN(port)) {
-      // named pipe
-      return val;
-   }
-
-   if (port >= 0) {
-      // port number
-      return port;
-   }
-
+   if (isNaN(port)) return val;
+   if (port >= 0) return port;
    return false;
 }
 
-/**
- * Event listener for HTTP server "error" event.
- */
-
 function onError(error) {
    if (error.syscall !== 'listen') {
+      console.error('Server error:', error);
       throw error;
    }
 
-   const bind = typeof port === 'string' ? 'Pipe ' + port : 'Port ' + port;
+   const bind = typeof port === 'string' ? `Pipe ${port}` : `Port ${port}`;
 
+   console.error(`${bind}: ${error.code}`);
    sendLog(error, 2);
-   // handle specific listen errors with friendly messages
+
    switch (error.code) {
       case 'EACCES':
-         console.error(bind + ' requires elevated privileges');
+         console.error(`${bind} requires elevated privileges`);
          process.exit(1);
          break;
       case 'EADDRINUSE':
-         console.error(bind + ' is already in use');
+         console.error(`${bind} is already in use`);
          process.exit(1);
          break;
       default:
          throw error;
    }
-}
-
-/**
- * Event listener for HTTP server "listening" event.
- */
-
-function onListening() {
-   const addr = server.address();
-   const bind = typeof addr === 'string' ? 'pipe ' + addr : 'port ' + addr.port;
-   console.log('Listening on ' + bind);
-   require('../helpers/crons');
 }

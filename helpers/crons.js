@@ -3,6 +3,7 @@ const { sendLog, sendDiscordNotification } = require('../helpers/utility');
 const { getData } = require('./vioHandler');
 const { Op } = require('sequelize');
 const { config } = require('../config');
+const { CUSTOM_ATTACK_MESSAGE } = config;
 const db = require('../models').sequelize;
 const moment = require('moment');
 moment.locale('de');
@@ -79,13 +80,8 @@ async function checkGangwarAttacks() {
       if (gwData) {
          if (gwData.LastAttack !== gw.LastAttack) {
             console.log(`ATTACK ${gw.Name}`);
-            console.log(config.CUSTOM_ATTACK_MESSAGE);
-            sendDiscordNotification(
-               config.CUSTOM_ATTACK_MESSAGE,
-               `> Name: ${gw.Name}\n> Item: ${gw.Amount}x ${ItemList[gw.ItemID] ? ItemList[gw.ItemID] : gw.ItemID}`,
-               0xa83232,
-               true
-            );
+            console.log(CUSTOM_ATTACK_MESSAGE);
+            sendDiscordNotification(CUSTOM_ATTACK_MESSAGE, `> Name: ${gw.Name}\n> Item: ${gw.Amount}x ${ItemList[gw.ItemID] ? ItemList[gw.ItemID] : gw.ItemID}`, 0xa83232, true);
             gwData = { ID: gw.ID, LastAttack: gw.LastAttack };
             lastData[index] = gwData;
          }

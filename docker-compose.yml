@@ -21,7 +21,8 @@ services:
          - internal
          - web
       depends_on:
-         - mysql-db-tracker
+         mysql-db-tracker:
+            condition: service_healthy # Warte auf DB healthy
       volumes:
          - '/etc/localtime:/etc/localtime:ro'
          - '/etc/timezone:/etc/timezone:ro'
@@ -42,6 +43,12 @@ services:
          - traefik.enable=false
       volumes:
          - mysql-data:/var/lib/mysql
+      healthcheck:
+         # DB-Health für depends_on
+         test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_PASSWORD}" ]
+         timeout: 20s
+         retries: 10
+         start_period: 30s
 
    mysql-backup-tracker:
       image: fradelg/mysql-cron-backup
