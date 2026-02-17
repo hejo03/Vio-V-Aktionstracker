@@ -31,6 +31,8 @@ services:
       image: mysql:8.0
       container_name: mysql-db-tracker
       restart: unless-stopped
+      ports:
+         - 3007:3006
       env_file: .env
       environment:
          MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}

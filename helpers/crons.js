@@ -2,11 +2,8 @@ let cron = require('node-cron');
 const { sendLog, sendDiscordNotification } = require('../helpers/utility');
 const { getData } = require('./vioHandler');
 const { Op } = require('sequelize');
-<<<<<<< HEAD
-=======
 const { config } = require('../config');
 const { CUSTOM_ATTACK_MESSAGE } = config;
->>>>>>> 8e9077d3c772951ec8e8ff0a8fa63b7586d457de
 const db = require('../models').sequelize;
 const moment = require('moment');
 moment.locale('de');
