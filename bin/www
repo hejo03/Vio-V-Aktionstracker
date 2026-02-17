@@ -2,7 +2,6 @@
 const app = require('../app');
 const http = require('http');
 const db = require('../models');
-const { sendLog } = require('../helpers/utility');
 require('dotenv').config();
 
 const port = normalizePort(process.env.PORT || '3000');
@@ -39,13 +38,11 @@ process.on('unhandledRejection', (reason, promise) => {
    console.error('=== UNHANDLED REJECTION ===');
    console.error('Promise:', promise);
    console.error('Reason:', reason);
-   sendLog(reason, 2);
 });
 
 process.on('uncaughtException', (error) => {
    console.error('=== UNCAUGHT EXCEPTION ===');
    console.error(error);
-   sendLog(error, 2);
    process.exit(1);
 });
 
@@ -92,7 +89,6 @@ function onError(error) {
    const bind = typeof port === 'string' ? `Pipe ${port}` : `Port ${port}`;
 
    console.error(`${bind}: ${error.code}`);
-   sendLog(error, 2);
 
    switch (error.code) {
       case 'EACCES':
