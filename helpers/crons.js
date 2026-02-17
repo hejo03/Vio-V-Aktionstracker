@@ -75,7 +75,7 @@ async function checkGangwarAttacks() {
    ownAreas.forEach((gw) => {
       let gwData = lastData.find((f) => f.ID == gw.ID);
       const index = lastData.findIndex((f) => f.ID == gw.ID);
-      console.log(gw.ID, gwData, index);
+      // console.log(gw.ID, gwData, index);
 
       if (gwData) {
          if (gwData.LastAttack !== gw.LastAttack) {
