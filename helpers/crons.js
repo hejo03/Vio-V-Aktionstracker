@@ -38,7 +38,6 @@ const ItemList = {
    23: 'Hanf',
    64: 'Markiertes Geld',
 };
-
 async function checkGangwarAttacks() {
    const gwData = await db.models.GWData.findByPk(1);
    if (!gwData) {
@@ -54,7 +53,7 @@ async function checkGangwarAttacks() {
    if (!findUserWithToken) {
       gwData.invalidToken = true;
       await gwData.save();
-      sendLog(`Fehler: Es wurde kein User mit einem gültigem API Token. Bitte auf der Aktionstracker Seite neu anmelden.`, 2);
+      sendLog('Fehler: Es wurde kein User mit einem gültigem API Token. Bitte auf der Aktionstracker Seite neu anmelden.', 2);
       return;
    }
 
@@ -63,33 +62,28 @@ async function checkGangwarAttacks() {
       console.log('API Call failed');
       return;
    }
+
    const allAreas = data.allAreas;
    const ownAreas = data.ownAreas;
 
    let lastData = gwData.lastData ? JSON.parse(gwData.lastData) : [];
-   // console.log(allAreas);
-   // console.log(ownAreas);
-   // console.log(lastData);
 
-   //checking:
+   // eigene Gebiete durchgehen
    ownAreas.forEach((gw) => {
-      let gwData = lastData.find((f) => f.ID == gw.ID);
+      let lastEntry = lastData.find((f) => f.ID == gw.ID);
       const index = lastData.findIndex((f) => f.ID == gw.ID);
-      // console.log(gw.ID, gwData, index);
 
-      if (gwData) {
-         if (gwData.LastAttack !== gw.LastAttack) {
-            console.log(`ATTACK ${gw.Name}`);
-            console.log(CUSTOM_ATTACK_MESSAGE);
+      if (lastEntry) {
+         if (lastEntry.LastAttack !== gw.LastAttack) {
             sendDiscordNotification(CUSTOM_ATTACK_MESSAGE, `> Name: ${gw.Name}\n> Item: ${gw.Amount}x ${ItemList[gw.ItemID] ? ItemList[gw.ItemID] : gw.ItemID}`, 0xa83232, true);
-            gwData = { ID: gw.ID, LastAttack: gw.LastAttack };
-            lastData[index] = gwData;
+            lastEntry = { ID: gw.ID, LastAttack: gw.LastAttack };
+            lastData[index] = lastEntry;
          }
       } else {
          const newGW = { ID: gw.ID, LastAttack: gw.LastAttack };
          lastData.push(newGW);
          sendDiscordNotification(
-            `Das Gebiet wurde erfolgreich eingenommen!`,
+            'Das Gebiet wurde erfolgreich eingenommen!',
             `> Name: ${gw.Name}\n> Item: ${gw.Amount}x ${ItemList[gw.ItemID] ? ItemList[gw.ItemID] : gw.ItemID}\n> Besitzer: ${gw.OldOwnerName}`,
             0x00a800,
             false
@@ -97,23 +91,30 @@ async function checkGangwarAttacks() {
       }
    });
 
-   for (const gwData of lastData) {
-      const search = ownAreas.find((f) => f.ID == gwData.ID);
-      if (search) continue;
-      const objWithIdIndex = lastData.findIndex((obj) => obj.ID === gwData.ID);
+   // Einträge in lastData, die nicht mehr zu ownAreas gehören => Gebiet verloren
+   for (const lastEntry of lastData.slice()) {
+      const stillOwned = ownAreas.find((f) => f.ID == lastEntry.ID);
+      if (stillOwned) continue;
 
+      const objWithIdIndex = lastData.findIndex((obj) => obj.ID === lastEntry.ID);
       if (objWithIdIndex > -1) {
          const memberlist = await getData(findUserWithToken.id, '/group/members');
          if (!memberlist) return;
+
          const onlinePlayers = memberlist.filter((f) => f.Online == 1);
-         const data = allAreas.find((f) => f.ID == gwData.ID);
-         if (data)
+         const areaData = allAreas.find((f) => f.ID == lastEntry.ID);
+
+         if (areaData) {
             sendDiscordNotification(
-               `Das Gebiet wurde eingenommen!`,
-               `> Name: ${data.Name}\n> Item: ${data.Amount}x ${ItemList[gw.ItemID] ? ItemList[gw.ItemID] : gw.ItemID}\n${onlinePlayers == 0 ? `\n> Status: Offlineattack` : ``}`,
+               'Das Gebiet wurde eingenommen!',
+               `> Name: ${areaData.Name}\n> Item: ${areaData.Amount}x ${
+                  ItemList[areaData.ItemID] ? ItemList[areaData.ItemID] : areaData.ItemID
+               }\n${onlinePlayers.length === 0 ? '\n> Status: Offlineattack' : ''}`,
                0xa83232,
                false
             );
+         }
+
          lastData.splice(objWithIdIndex, 1);
       }
    }
