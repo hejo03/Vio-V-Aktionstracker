@@ -121,7 +121,7 @@ async function checkGangwarAttacks() {
    gwData.lastCheck = moment(new Date()).toDate();
    gwData.lastData = JSON.stringify(lastData);
 
-   await gwData.save().catch((error) => console.error('Fehler beim Speichern:', error));
+   await gwData.save();
 }
 
 async function checkStorageWeight() {
