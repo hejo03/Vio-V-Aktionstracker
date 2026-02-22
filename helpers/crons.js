@@ -16,7 +16,10 @@ cron.schedule(
    async () => {
       await checkGangwarAttacks();
    },
-   {}
+   {
+      noOverlap: true,
+      timezone: 'Europe/Berlin',
+   }
 );
 
 // alle 60min
@@ -38,6 +41,7 @@ const ItemList = {
    23: 'Hanf',
    64: 'Markiertes Geld',
 };
+
 async function checkGangwarAttacks() {
    const gwData = await db.models.GWData.findByPk(1);
    if (!gwData) {
@@ -75,6 +79,9 @@ async function checkGangwarAttacks() {
 
       if (lastEntry) {
          if (lastEntry.LastAttack !== gw.LastAttack) {
+            console.log(gw.ID);
+            console.log('Last: ' + new Date(lastEntry.LastAttack * 1000));
+            console.log(new Date(gw.LastAttack * 1000));
             sendDiscordNotification(CUSTOM_ATTACK_MESSAGE, `> Name: ${gw.Name}\n> Item: ${gw.Amount}x ${ItemList[gw.ItemID] ? ItemList[gw.ItemID] : gw.ItemID}`, 0xa83232, true);
             lastEntry = { ID: gw.ID, LastAttack: gw.LastAttack };
             lastData[index] = lastEntry;
