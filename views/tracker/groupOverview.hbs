@@ -1,0 +1,241 @@
+{{#> layouts/base }} {{#*inline "content-block"}}
+
+<div class="container-fluid px-4">
+    <h4 class="mb-3">Gruppen-Übersicht</h4>
+
+    <!-- Lager -->
+    {{#if maxWeight}}
+    <div class="card mb-3">
+        <div class="card-header"><i class="fas fa-warehouse me-2"></i>Lager</div>
+        <div class="card-body">
+            <div class="d-flex justify-content-between mb-1">
+                <span>{{totalWeight}} / {{maxWeight}} Gewicht</span>
+                <span>{{storagePercent}}%</span>
+            </div>
+            <div class="progress" style="height: 20px;">
+                <div
+                    class="progress-bar {{#if (gte storagePercent 90)}}bg-danger{{else}}{{#if (gte storagePercent 70)}}bg-warning{{else}}bg-success{{/if}}{{/if}}"
+                    role="progressbar"
+                    style="width: {{storagePercent}}%;"
+                    aria-valuenow="{{storagePercent}}"
+                    aria-valuemin="0"
+                    aria-valuemax="100"
+                >
+                    {{storagePercent}}%
+                </div>
+            </div>
+        </div>
+    </div>
+    {{/if}}
+
+    <div class="row">
+        <!-- Mitglieder -->
+        <div class="col-lg-6 mb-3">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span><i class="fas fa-users me-2"></i>Mitglieder</span>
+                    <span class="badge bg-success">{{onlineMembers}} online</span>
+                </div>
+                <div class="card-body p-0">
+                    {{#if members.length}}
+                    <div style="max-height: 420px; overflow-y: auto;">
+                        <table class="table table-sm table-hover mb-0">
+                            <thead class="sticky-top table-dark">
+                                <tr>
+                                    <th></th>
+                                    <th>Name</th>
+                                    <th>Rang</th>
+                                    <th>Status</th>
+                                    {{#if isLeader}}<th></th>{{/if}}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {{#each members}}
+                                <tr>
+                                    <td class="ps-2">
+                                        <img src="https://vio-v.com/app/avatarPicture.php?user={{this.Name}}" width="24" height="24" class="rounded-circle" />
+                                    </td>
+                                    <td>{{this.Name}}</td>
+                                    <td><span class="badge bg-secondary">{{this.rankName}}</span></td>
+                                    <td>
+                                        {{#if (eq this.Online 1)}}
+                                        <span class="badge bg-success">Online</span>
+                                        {{else}}
+                                        <span class="badge bg-secondary">Offline</span>
+                                        {{/if}}
+                                    </td>
+                                    {{#if ../isLeader}}
+                                    <td class="text-end pe-2">
+                                        <button class="btn btn-sm btn-outline-secondary py-0 px-2"
+                                                data-bs-toggle="collapse"
+                                                data-bs-target="#perms-{{this.CharacterID}}"
+                                                aria-expanded="false">
+                                            <i class="fas fa-key fa-xs"></i>
+                                        </button>
+                                    </td>
+                                    {{/if}}
+                                </tr>
+                                {{#if ../isLeader}}
+                                <tr class="collapse" id="perms-{{this.CharacterID}}">
+                                    <td colspan="5" class="py-2 px-3 bg-dark bg-opacity-50">
+                                        {{#each this.permissions}}
+                                        <span class="badge bg-dark border border-secondary me-1 mb-1" style="font-size:0.7em;">{{this}}</span>
+                                        {{/each}}
+                                        {{#unless this.permissions.length}}
+                                        <small class="text-muted">Keine Rechte</small>
+                                        {{/unless}}
+                                    </td>
+                                </tr>
+                                {{/if}}
+                                {{/each}}
+                            </tbody>
+                        </table>
+                    </div>
+                    {{else}}
+                    <div class="p-3 text-muted">Keine Mitgliederdaten verfügbar.</div>
+                    {{/if}}
+                </div>
+            </div>
+        </div>
+
+        <!-- Gebiete / Fabriken -->
+        <div class="col-lg-6 mb-3">
+            {{#if (eq groupType 'gang')}}
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span><i class="fas fa-flag me-2"></i>Eigene Gebiete</span>
+                    <span class="badge bg-primary">{{areas.length}}</span>
+                </div>
+                <div class="card-body p-0">
+                    {{#if areas.length}}
+                    <div style="max-height: 420px; overflow-y: auto;">
+                        <table class="table table-sm table-hover mb-0">
+                            <thead class="sticky-top table-dark">
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Item</th>
+                                    <th>Menge</th>
+                                    <th>Letzter Angriff</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {{#each areas}}
+                                <tr>
+                                    <td>{{this.Name}}</td>
+                                    <td>{{this.ItemID}}</td>
+                                    <td>{{this.Amount}}</td>
+                                    <td>
+                                        {{#if this.LastAttack}}
+                                        <small class="text-muted">{{momentFromNow (multi this.LastAttack 1000)}}</small>
+                                        {{else}}
+                                        <small class="text-muted">–</small>
+                                        {{/if}}
+                                    </td>
+                                </tr>
+                                {{/each}}
+                            </tbody>
+                        </table>
+                    </div>
+                    {{else}}
+                    <div class="p-3 text-muted">Keine eigenen Gebiete.</div>
+                    {{/if}}
+                </div>
+            </div>
+            {{else}}
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span><i class="fas fa-industry me-2"></i>Eigene Fabriken</span>
+                    <span class="badge bg-primary">{{ownFactories.length}}</span>
+                </div>
+                <div class="card-body p-0">
+                    {{#if ownFactories.length}}
+                    <div style="max-height: 420px; overflow-y: auto;">
+                        <table class="table table-sm table-hover mb-0">
+                            <thead class="sticky-top table-dark">
+                                <tr>
+                                    <th>#</th>
+                                    <th>Typ</th>
+                                    <th>Produkt</th>
+                                    <th>Nächste Einnahme</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {{#each ownFactories}}
+                                <tr>
+                                    <td class="text-muted">{{this.ID}}</td>
+                                    <td>{{this.type}}</td>
+                                    <td><span class="badge bg-secondary">{{this.item}}</span></td>
+                                    <td>
+                                        {{#if this.NextCapture}}
+                                        <small class="text-muted">{{momentFromNow (multi this.NextCapture 1000)}}</small>
+                                        {{else}}
+                                        <small class="text-muted">–</small>
+                                        {{/if}}
+                                    </td>
+                                </tr>
+                                {{/each}}
+                            </tbody>
+                        </table>
+                    </div>
+                    {{else}}
+                    <div class="p-3 text-muted">Keine eigenen Fabriken.</div>
+                    {{/if}}
+                </div>
+            </div>
+            {{/if}}
+        </div>
+    </div>
+
+    <!-- Fahrzeuge -->
+    {{#if vehicles.length}}
+    <div class="card mb-3">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <span><i class="fas fa-car me-2"></i>Fahrzeuge</span>
+            <span class="badge bg-secondary">{{vehicles.length}}</span>
+        </div>
+        <div class="card-body p-0">
+            <div style="max-height: 350px; overflow-y: auto;">
+                <table class="table table-sm table-hover mb-0">
+                    <thead class="sticky-top table-dark">
+                        <tr>
+                            <th>Fahrzeug</th>
+                            <th>Letzter Fahrer</th>
+                            <th>Zustand</th>
+                            <th>Kraftstoff</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{#each vehicles}}
+                        <tr>
+                            <td>{{this.DisplayName}}</td>
+                            <td><small class="text-muted">{{this.LastDriver}}</small></td>
+                            <td>
+                                {{#ifSNTEquals this.Health null}}
+                                <div class="progress" style="height:14px; min-width:60px;">
+                                    <div class="progress-bar {{#if (lt this.Health 40)}}bg-danger{{else}}{{#if (lt this.Health 70)}}bg-warning{{else}}bg-success{{/if}}{{/if}}"
+                                        role="progressbar" style="width:{{this.Health}}%;">
+                                        {{this.Health}}%
+                                    </div>
+                                </div>
+                                {{else}}–{{/ifSNTEquals}}
+                            </td>
+                            <td>
+                                {{#ifSNTEquals this.Fuel null}}
+                                <div class="progress" style="height:14px; min-width:60px;">
+                                    <div class="progress-bar bg-info" role="progressbar" style="width:{{this.Fuel}}%;">
+                                        {{this.Fuel}}%
+                                    </div>
+                                </div>
+                                {{else}}–{{/ifSNTEquals}}
+                            </td>
+                        </tr>
+                        {{/each}}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {{/if}}
+</div>
+
+{{/inline}} {{/layouts/base}}

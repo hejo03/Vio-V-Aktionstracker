@@ -36,6 +36,19 @@ class Authentication {
          return res.redirect('/');
       };
    }
+
+   static isLeaderOrHasRank(minRank) {
+      return async function (req, res, next) {
+         if (!req.user.Role) {
+            return res.redirect('/login');
+         }
+         if (req.user.Role.isLeader || req.user.Role.permissionLevel <= minRank) {
+            return next();
+         }
+         await req.flash('error', 'Dazu hast du keine Rechte!');
+         return res.redirect('/');
+      };
+   }
 }
 
 module.exports = Authentication;

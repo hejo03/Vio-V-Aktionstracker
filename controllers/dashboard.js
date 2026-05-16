@@ -1,10 +1,22 @@
 const db = require('../models').sequelize;
-const moment = require('moment');
-moment.locale('de');
-const { Op, Sequelize, DataTypes } = require('sequelize');
 const { sequelize } = require('../models');
 const { getData } = require('../helpers/vioHandler');
 const { config } = require('../config');
+
+const GROUP_FACTORIES = {
+   1: { type: 'Schwarzpulverfabrik', item: 'Schwarzpulver' },
+   2: { type: 'Gießerei', item: 'Metallteile' },
+   3: { type: 'Geldwäscherei', item: 'Gereinigter Geldschein' },
+   4: { type: 'Gießerei', item: 'Metallteile' },
+   5: { type: 'Gießerei', item: 'Metallteile' },
+   6: { type: 'Gießerei', item: 'Metallteile' },
+   7: { type: 'Geldwäscherei', item: 'Gereinigter Geldschein' },
+   8: { type: 'Geldwäscherei', item: 'Gereinigter Geldschein' },
+   9: { type: 'Munitionsfabrik', item: 'Munition D' },
+   10: { type: 'Munitionsfabrik', item: 'Munition D' },
+   11: { type: 'Gießerei', item: 'Metallteile' },
+   12: { type: 'Geldwäscherei', item: 'Gereinigter Geldschein' },
+};
 
 exports.index = async (req, res) => {
    res.render('tracker/index', {
@@ -18,57 +30,15 @@ exports.stats = async (req, res) => {
       include: [
          {
             model: sequelize.models.User,
-            where: {
-               id: req.user.id,
-            },
+            where: { id: req.user.id },
          },
          'OperationType',
       ],
    });
-   // console.log(userAllTimeOperations);
-   // const allOperationTypes = await db.models.Operation.findAndCountAll({
-   //     include: [{
-   //             model: sequelize.models.OperationType
-   //         },
-   //         {
-   //             model: sequelize.models.User,
-   //             where: {
-   //                 id: req.user.id,
-   //             }
-   //         }
-   //     ],
-   //     group: 'OperationType'
-   // });
-   // var operations = await db.models.Operation.findAll({
-   //     include: [
-   //         "OperationType",
-   //         {
-   //             association: "Users"
-   //         }
-   //     ]
-   // });
-   // operations.forEach(op => {
-   //     if (op.valid) {
-   //         const points = op.OperationType.points;
-   //         var found = op.Users.find(u => u.id == req.user.id);
-   //         if (!found) {
-   //             operations = operations.filter(function(item) {
-   //                 return item !== op;
-   //             });
-   //         }
-   //     }
-   // });
-   // console.log(operations)
-   // const operationTypes = operations.map(o => o.OperationType).filter(function(ele, pos) {
-   //     return operations.map(o => o.OperationType).indexOf(ele) == pos;
-   // })
-   // console.log(operationTypes)
 
    res.render('tracker/stats', {
       allTimeOperations: allTimeOperations.count,
       userAllTimeOperationsCount: userAllTimeOperations.count,
-      // userAllTimeOperations: userAllTimeOperations.rows,
-      // allOperationTypes: allOperationTypes,
       title: 'Statistiken',
    });
 };
@@ -138,6 +108,99 @@ exports.calcGWStorage = async (req, res) => {
       maxWeight,
       totalWeight,
       timeUntilFull,
+   });
+};
+
+exports.groupOverview = async (req, res) => {
+   const PERMISSION_LABELS = {
+      cashout: 'Kasse',
+      crafting: 'Crafting',
+      diplomacy: 'Diplomatie',
+      group_factory_lead: 'Fabrik-Leitung',
+      group_factory_user: 'Fabrik',
+      interior: 'Interieur',
+      invite: 'Einladen',
+      manage_applications: 'Bewerbungen',
+      park: 'Parken',
+      rank_down: 'Degradieren',
+      rank_up: 'Befördern',
+      respawn: 'Respawn',
+      set_permission: 'Rechte',
+      storage: 'Lager',
+      uninvite: 'Rauswerfen',
+      vehicle_tuning: 'Fahrzeug-Tuning',
+   };
+
+   const [rawMembers, storageData, serverItems, rawRanks] = await Promise.all([
+      getData(req.user.id, '/group/members'),
+      getData(req.user.id, '/group/storage'),
+      getData(req.user.id, '/system/items'),
+      getData(req.user.id, '/group/ranks'),
+   ]);
+
+   const rankMap = rawRanks ? Object.fromEntries(rawRanks.map((r) => [r.RankID, r.Name])) : {};
+   const isLeader = req.user?.Role?.isLeader === true;
+
+   const members = rawMembers
+      ? rawMembers
+           .map((m) => ({
+              ...m,
+              rankName: rankMap[m.Rank] ?? `Rang ${m.Rank}`,
+              permissions: JSON.parse(m.Permissions || '[]')
+                 .filter((p) => !p.startsWith('item_'))
+                 .map((p) => PERMISSION_LABELS[p] ?? p),
+           }))
+           .sort((a, b) => a.Rank - b.Rank)
+      : [];
+
+   let areas = null;
+   let ownFactories = null;
+   let vehicles = null;
+
+   if (config.groupType === 'gang') {
+      areas = await getData(req.user.id, '/group/areas');
+   } else {
+      const rawFactories = await getData(req.user.id, '/group/factories');
+      ownFactories = rawFactories
+         ? rawFactories.map((f) => ({ ...f, ...GROUP_FACTORIES[f.ID] }))
+         : null;
+   }
+
+   const rawVehicles = await getData(req.user.id, '/group/vehicles');
+   vehicles = rawVehicles
+      ? rawVehicles.map((v) => ({
+           ...v,
+           Health: v.Health != null && v.MaxHealth ? Math.round((v.Health / v.MaxHealth) * 100) : null,
+           Fuel: v.Fuel != null && v.MaxFuel ? Math.round((v.Fuel / v.MaxFuel) * 100) : null,
+        }))
+      : [];
+
+   let totalWeight = 0;
+   let maxWeight = 0;
+   if (storageData && storageData.length > 0 && serverItems) {
+      maxWeight = storageData[0].maxWeight;
+      storageData.forEach((item) => {
+         const sItem = serverItems.find((i) => i.ID === item.item);
+         if (!sItem) return;
+         if (sItem.Weight) totalWeight += sItem.Weight * item.amount;
+      });
+   }
+
+   const onlineMembers = members ? members.filter((m) => m.Online == 1).length : 0;
+
+   res.render('tracker/groupOverview', {
+      title: 'Gruppen-Übersicht',
+      members: members || [],
+      onlineMembers,
+      isLeader,
+      areas: areas ? areas.ownAreas || [] : null,
+      ownFactories: ownFactories || null,
+      vehicles: vehicles || [],
+      storageData: storageData || [],
+      totalWeight: Math.floor(totalWeight),
+      maxWeight,
+      storagePercent: maxWeight > 0 ? Math.floor((totalWeight / maxWeight) * 100) : 0,
+      groupType: config.groupType,
    });
 };
 

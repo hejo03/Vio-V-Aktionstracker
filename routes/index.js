@@ -24,15 +24,16 @@ router.post('/payment', auth.isAuthenticated, operationController.setTempMoney);
 router.get('/operations/create', auth.isAuthenticated, operationController.create);
 router.post('/operations/create', auth.isAuthenticated, operationController.store);
 
-router.get('/operations/manage', auth.isAuthenticated, auth.hasRank(3), operationController.managementIndex);
-router.get('/operations/manage/:id/validate', auth.isAuthenticated, auth.hasRank(3), operationController.managementValidate);
-router.get('/operations/manage/:id/delete', auth.isAuthenticated, auth.hasRank(3), operationController.managementDelete);
+router.get('/operations/manage', auth.isAuthenticated, auth.isLeaderOrHasRank(3), operationController.managementIndex);
+router.get('/operations/manage/:id/validate', auth.isAuthenticated, auth.isLeaderOrHasRank(3), operationController.managementValidate);
+router.get('/operations/manage/:id/delete', auth.isAuthenticated, auth.isLeaderOrHasRank(3), operationController.managementDelete);
 router.post('/operations/manage/:id/addUser', auth.isAuthenticated, operationController.managementAddUser);
 router.post('/operations/manage/:id/removeUser', auth.isAuthenticated, operationController.managementRemoveUser);
 
 router.get('/operations/stats', auth.isAuthenticated, operationController.statisticsIndex);
 
 router.get('/gwStorage', auth.isAuthenticated, dashboardController.calcGWStorage);
+router.get('/group', auth.isAuthenticated, dashboardController.groupOverview);
 
 /* Profile & Settings System */
 router.get('/profile', auth.isAuthenticated, dashboardController.profile);

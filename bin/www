@@ -52,6 +52,9 @@ process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 db.sequelize
    .sync({ alter: true, force: false })
    .then(async () => {
+      const { seedOperationTypes } = require('../helpers/seeder');
+      await seedOperationTypes(db.sequelize);
+
       server.listen(port, () => {
          const addr = server.address();
          const bind = typeof addr === 'string' ? `pipe ${addr}` : `port ${addr.port}`;

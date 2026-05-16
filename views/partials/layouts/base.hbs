@@ -74,16 +74,18 @@
                             </a>
                             <div class="dropdown-menu" aria-labelledby="navbarOperations">
                                 <a class="dropdown-item {{ternary (seq '/operations/' req.originalUrl) 'active' '' }}" href="/operations/"> <i class="fas fa-list"></i> Aktionen </a>
-                                {{#if (lte account.Role.permissionLevel 3)}}
+                                {{#if (or (lte account.Role.permissionLevel 3) account.Role.isLeader)}}
                                 <a class="dropdown-item {{ternary (seq '/operations/manage' req.originalUrl) 'active' '' }}" href="/operations/manage"> <i class="fas fa-list"></i> Freigeben </a>
                                 {{/if}}
                                 <a class="dropdown-item {{ternary (isRouteActive '/payment' req.originalUrl) 'active' '' }}" href="/payment"> <i class="fas fa-list"></i> Auszahlung </a>
                                 <a class="dropdown-item {{ternary (isRouteActive '/stats' req.originalUrl) 'active' '' }}" href="/stats"> <i class="fas fa-list"></i> Statistiken </a>
                             </div>
                         </li>
-                        {{#unless (eq groupType 'gang')}}
+                        {{#unless (eq groupType 'squad')}}
                         <li><a href="/gwStorage" class="nav-link px-2">Lagerplatz</a></li>
-                        {{/unless}} {{/if}} {{#if account.Role.isLeader}}
+                        {{/unless}}
+                        <li><a href="/group" class="nav-link px-2 link-{{ternary (eq '/group' req.originalUrl) 'active' '' }}">Gruppe</a></li>
+                        {{/if}} {{#if account.Role.isLeader}}
                         <li class="nav-item dropdown">
                             <a
                                 class="nav-link dropdown-toggle {{ternary (isRouteActive '/leader' req.originalUrl) 'active' '' }}"

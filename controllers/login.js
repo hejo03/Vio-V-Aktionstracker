@@ -1,13 +1,8 @@
 const db = require('../models').sequelize;
-const { Op } = require('sequelize');
-const Utility = require('../helpers/utility');
 const fetch = require('node-fetch');
 const crypto = require('crypto');
 const auth = require('../helpers/auth');
 const { config } = require('../config');
-const { getData } = require('../helpers/vioHandler');
-const moment = require('moment');
-moment.locale('de');
 require('dotenv').config();
 
 const CLIENT_ID = process.env.CLIENT_ID;
@@ -63,24 +58,11 @@ exports.loginSubmit = async (req, res) => {
 
    const { access_token, token_type, refresh_token } = await token_data.json();
 
-   const self_data = await fetch(`${API_URL}/api/v3/self`, {
-      method: 'GET',
-      headers: {
-         authorization: `${token_type} ${access_token}`,
-      },
-   });
-   const group_data = await fetch(`${API_URL}/api/v3/group`, {
-      method: 'GET',
-      headers: {
-         authorization: `${token_type} ${access_token}`,
-      },
-   });
-   const group_members = await fetch(`${API_URL}/api/v3/group/members`, {
-      method: 'GET',
-      headers: {
-         authorization: `${token_type} ${access_token}`,
-      },
-   });
+   const [self_data, group_data, group_members] = await Promise.all([
+      fetch(`${API_URL}/api/v3/self`, { headers: { authorization: `${token_type} ${access_token}` } }),
+      fetch(`${API_URL}/api/v3/group`, { headers: { authorization: `${token_type} ${access_token}` } }),
+      fetch(`${API_URL}/api/v3/group/members`, { headers: { authorization: `${token_type} ${access_token}` } }),
+   ]);
 
    const playerData = await self_data.json();
    const groupData = await group_data.json();
@@ -93,13 +75,9 @@ exports.loginSubmit = async (req, res) => {
    if (config.groupId == groupData[0].ID && roleCount === 0) {
       console.log('=== ROLE SETUP START ===');
       const group_roles = await fetch(`${API_URL}/api/v3/group/ranks`, {
-         method: 'GET',
-         headers: {
-            authorization: `${token_type} ${access_token}`,
-         },
+         headers: { authorization: `${token_type} ${access_token}` },
       });
       const groupRoleData = await group_roles.json();
-      console.log(groupRoleData);
 
       for (const role of groupRoleData) {
          await db.models.Role.create({
@@ -118,11 +96,7 @@ exports.loginSubmit = async (req, res) => {
       return res.redirect('/');
    }
 
-   let loginUser = await db.models.User.findOne({
-      where: {
-         charId: playerData.ID,
-      },
-   });
+   let loginUser = await db.models.User.findOne({ where: { charId: playerData.ID } });
 
    if (config.groupId == groupData[0].ID) {
       if (!loginUser) {

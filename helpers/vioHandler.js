@@ -83,7 +83,6 @@ async function getData(userId, path) {
       );
 
       if (error.response?.data?.error_description?.includes('revoked')) {
-         sendDiscordDebug('api token revoked', `${user.name} - ${path}`);
          user.vio_access_token = null;
          user.vio_refresh_token = null;
          await user.save();
