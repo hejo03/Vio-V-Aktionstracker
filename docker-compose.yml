@@ -41,6 +41,7 @@ services:
          TZ: Europe/Berlin
       networks:
          - internal
+         - web
       labels:
          - traefik.enable=false
       volumes:
