@@ -1,7 +1,7 @@
 const db = require('../models').sequelize;
 const auth = require('./auth');
 const { config } = require('../config');
-const { gangName, version } = config;
+const { gangName, version, groupType } = config;
 module.exports = () => {
    return async function (req, res, next) {
       res.locals.req = req;
@@ -27,6 +27,7 @@ module.exports = () => {
       }
       res.locals.version = version;
       res.locals.gangName = gangName;
+      res.locals.groupType = groupType;
       res.locals.account = req.user;
       res.locals.message = {
          info: await req.consumeFlash('info'),

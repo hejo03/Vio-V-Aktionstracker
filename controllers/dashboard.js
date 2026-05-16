@@ -4,6 +4,7 @@ moment.locale('de');
 const { Op, Sequelize, DataTypes } = require('sequelize');
 const { sequelize } = require('../models');
 const { getData } = require('../helpers/vioHandler');
+const { config } = require('../config');
 
 
 
@@ -75,6 +76,7 @@ exports.stats = async (req, res) => {
 };
 
 exports.calcGWStorage = async (req, res) => {
+   if (config.groupType === 'squad') return res.redirect('/');
    const storageData = await getData(req.user.id, '/group/storage');
    const serverItems = await getData(req.user.id, '/system/items');
    const gwData = await getData(req.user.id, '/group/areas');
