@@ -53,15 +53,14 @@ async function sendLog(mes = '', type = 0) {
    webhookClient.send({ embeds: [embed], username: 'Tracker Logs' }).catch((err) => console.log(err));
 }
 
-async function sendDiscordNotification(title, description, color = 0x2b2d31, ping = true) {
+async function sendDiscordNotification(title, description, color = 0x2b2d31, ping = true, author = 'Gangwar') {
    const webhook = new WebhookClient({ url: notificationHook });
-   if (!webhook) return reject('Webhook invalid.');
+   if (!webhook) return;
 
    const embed = new EmbedBuilder();
    embed
-      .setAuthor({ name: 'Gangwar' })
+      .setAuthor({ name: author })
       .setColor(color)
-
       .setTimestamp()
       .setTitle(title)
       .setDescription(description);

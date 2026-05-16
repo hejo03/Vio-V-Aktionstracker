@@ -90,7 +90,8 @@ exports.loginSubmit = async (req, res) => {
 
    //SETUP ROLES
    const roleCount = await db.models.Role.count();
-   if (config.groupId == groupData[0].ID && roleCount == 0) {
+   if (config.groupId == groupData[0].ID && roleCount === 0) {
+      console.log('=== ROLE SETUP START ===');
       const group_roles = await fetch(`${API_URL}/api/v3/group/ranks`, {
          method: 'GET',
          headers: {
@@ -100,14 +101,14 @@ exports.loginSubmit = async (req, res) => {
       const groupRoleData = await group_roles.json();
       console.log(groupRoleData);
 
-      groupRoleData.forEach(async (role) => {
+      for (const role of groupRoleData) {
          await db.models.Role.create({
             name: role.Name,
             permissionLevel: role.RankID,
             isLeader: role.Leader,
          });
          console.log(`${role.Name} wurde erstellt`);
-      });
+      }
    }
 
    let findRole = await db.models.Role.findOne({ where: { permissionLevel: myGroupData.Rank } });
