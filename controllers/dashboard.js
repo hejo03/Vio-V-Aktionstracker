@@ -6,8 +6,6 @@ const { sequelize } = require('../models');
 const { getData } = require('../helpers/vioHandler');
 const { config } = require('../config');
 
-
-
 exports.index = async (req, res) => {
    res.render('tracker/index', {
       title: 'Dashboard',
@@ -80,14 +78,12 @@ exports.calcGWStorage = async (req, res) => {
    const storageData = await getData(req.user.id, '/group/storage');
    const serverItems = await getData(req.user.id, '/system/items');
    const gwData = await getData(req.user.id, '/group/areas');
-   console.log(storageData);
-   console.log(serverItems);
    if (!serverItems) {
-      console.log("Fehler: Serveritems nicht gefunden.");
+      console.log('Fehler: Serveritems nicht gefunden.');
       return;
    }
    if (!storageData || storageData.length == 0) {
-      console.log("Fehler: Lager ist leer.")
+      console.log('Fehler: Lager ist leer.');
       return;
    }
 
@@ -97,56 +93,53 @@ exports.calcGWStorage = async (req, res) => {
    }
    const ownAreas = gwData.ownAreas;
 
-   const itemList = []
+   const itemList = [];
 
-   ownAreas.forEach(gw => {
-      let item = itemList.find((f) => f.ID == gw.ItemID)
+   ownAreas.forEach((gw) => {
+      let item = itemList.find((f) => f.ID == gw.ItemID);
       if (!item) {
-         item = { ID: gw.ItemID, Amount: gw.Amount }
-      }
-      else {
-         item.Amount += gw.Amount
+         item = { ID: gw.ItemID, Amount: gw.Amount };
+      } else {
+         item.Amount += gw.Amount;
       }
       item.ItemWeight = serverItems.find((i) => i.ID == gw.ItemID).Weight || 0;
-      itemList.push(item)
+      itemList.push(item);
    });
-   console.log(itemList);
 
    const maxWeight = storageData[0].maxWeight;
 
    let totalWeight = 0;
-   storageData.forEach(item => {
-      const sItem = serverItems[item.item]
-      if(!sItem) return;
-      if (item.Weight)
-         totalWeight += sItem.Weight * item.Amount;
+   storageData.forEach((item) => {
+      const sItem = serverItems[item.item];
+      if (!sItem) return;
+      if (item.Weight) totalWeight += sItem.Weight * item.Amount;
    });
 
    function calculateTimeUntilFull(totalWeight, maxWeight, itemList) {
       // Berechne das Gesamtgewicht, das pro Stunde hinzugefügt wird
-      const weightPerHour = itemList.reduce((acc, item) => acc + (item.ItemWeight * item.Amount), 0);
-  
+      const weightPerHour = itemList.reduce((acc, item) => acc + item.ItemWeight * item.Amount, 0);
+
       // Berechne die verbleibende Kapazität
       const remainingCapacity = maxWeight - totalWeight;
-  
+
       // Berechne die Zeit bis zur vollen Kapazität in Stunden
       if (weightPerHour > 0) {
-          return Math.floor(remainingCapacity / weightPerHour);
+         return Math.floor(remainingCapacity / weightPerHour);
       } else {
-          return -1; // Wenn keine Items pro Stunde hinzugefügt werden, wird das Lager nie voll
+         return -1; // Wenn keine Items pro Stunde hinzugefügt werden, wird das Lager nie voll
       }
-  }
+   }
 
-  const timeUntilFull = calculateTimeUntilFull(totalWeight, maxWeight, itemList);
+   const timeUntilFull = calculateTimeUntilFull(totalWeight, maxWeight, itemList);
 
    res.render('tracker/gwStorage', {
       title: 'GW Lagerplatz',
       itemList,
       maxWeight,
       totalWeight,
-      timeUntilFull
-   })
-}
+      timeUntilFull,
+   });
+};
 
 exports.profile = async (req, res) => {
    res.render('tracker/profile', {

@@ -81,8 +81,9 @@
                                 <a class="dropdown-item {{ternary (isRouteActive '/stats' req.originalUrl) 'active' '' }}" href="/stats"> <i class="fas fa-list"></i> Statistiken </a>
                             </div>
                         </li>
-                        {{#unless (eq groupType 'squad')}}<li><a href="/gwStorage" class="nav-link px-2">Lagerplatz</a></li>{{/unless}}
-                        {{/if}} {{#if account.Role.isLeader}}
+                        {{#unless (eq groupType 'gang')}}
+                        <li><a href="/gwStorage" class="nav-link px-2">Lagerplatz</a></li>
+                        {{/unless}} {{/if}} {{#if account.Role.isLeader}}
                         <li class="nav-item dropdown">
                             <a
                                 class="nav-link dropdown-toggle {{ternary (isRouteActive '/leader' req.originalUrl) 'active' '' }}"

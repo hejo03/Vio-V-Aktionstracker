@@ -32,7 +32,7 @@ cron.schedule(
 cron.schedule(
    '*/60 * * * *',
    async () => {
-      await checkStorageWeight();
+      if (groupType === 'gang') await checkStorageWeight();
    },
    {}
 );
@@ -149,24 +149,39 @@ async function checkGangwarAttacks() {
 }
 
 async function checkFactoryAttacks() {
+   console.log('[checkFactoryAttacks] Cron gestartet');
+
    const gwData = await getOrInitGWData(db);
-   if (!gwData) return;
-   if (gwData.invalidToken) return;
+   if (!gwData) {
+      console.log('[checkFactoryAttacks] GWData nicht gefunden – Abbruch');
+      return;
+   }
+   if (gwData.invalidToken) {
+      console.log('[checkFactoryAttacks] Token ungültig (invalidToken=true) – Abbruch');
+      return;
+   }
 
    const findUserWithToken = await findValidUser(db, gwData);
-   if (!findUserWithToken) return;
+   if (!findUserWithToken) {
+      console.log('[checkFactoryAttacks] Kein gültiger User mit Token gefunden – Abbruch');
+      return;
+   }
+   console.log(`[checkFactoryAttacks] User gefunden: ID=${findUserWithToken.id}`);
 
    // own_factories = Fabriken die wir besitzen (entspricht ownAreas)
    // factories     = alle Fabriken auf der Map  (entspricht allAreas)
+   console.log('[checkFactoryAttacks] Rufe API ab: /group/own_factories und /group/factories');
    const ownFactories = await getData(findUserWithToken.id, '/group/own_factories');
    const allFactories = await getData(findUserWithToken.id, '/group/factories');
 
    if (!ownFactories) {
-      console.log('API Call /group/own_factories failed');
+      console.log('[checkFactoryAttacks] API Call /group/own_factories fehlgeschlagen – Abbruch');
       return;
    }
+   console.log(`[checkFactoryAttacks] API-Ergebnis: ${ownFactories.length} eigene Fabrik(en), ${allFactories ? allFactories.length : 'n/a'} Fabriken gesamt`);
 
    let lastData = gwData.lastFactoryData ? JSON.parse(gwData.lastFactoryData) : [];
+   console.log(`[checkFactoryAttacks] Letzter Stand: ${lastData.length} Fabrik(en) in DB gespeichert`);
 
    // eigene Fabriken durchgehen
    ownFactories.forEach((factory) => {
@@ -177,46 +192,49 @@ async function checkFactoryAttacks() {
       if (lastEntry) {
          if (lastEntry.NextCapture === undefined) {
             // Migration: altes Format ohne NextCapture → nur aktualisieren, kein Alert
+            console.log(`[checkFactoryAttacks] Fabrik ID=${factory.ID}: Migration altes Format – aktualisiere NextCapture ohne Alert`);
             lastData[index] = { ID: factory.ID, NextCapture: factory.NextCapture };
          } else if (lastEntry.NextCapture !== factory.NextCapture) {
-            console.log(`Fabrik angegriffen: ${factory.ID}`);
-            sendDiscordNotification(
-               CUSTOM_ATTACK_MESSAGE,
-               `> Typ: ${factory.Type}${itemInfo}`,
-               0xa83232,
-               true,
-               'Fabrik'
-            );
+            console.log(`[checkFactoryAttacks] Fabrik ID=${factory.ID} (${factory.Type}) ANGEGRIFFEN – NextCapture: ${lastEntry.NextCapture} → ${factory.NextCapture}`);
+            sendDiscordNotification(CUSTOM_ATTACK_MESSAGE, `> Typ: ${factory.Type}${itemInfo}`, 0xa83232, true, 'Fabrik');
             lastData[index] = { ID: factory.ID, NextCapture: factory.NextCapture };
+         } else {
+            console.log(`[checkFactoryAttacks] Fabrik ID=${factory.ID} (${factory.Type}): kein Angriff, NextCapture unverändert (${factory.NextCapture})`);
          }
       } else {
          // Fabrik neu eingenommen
+         console.log(`[checkFactoryAttacks] Fabrik ID=${factory.ID} (${factory.Type}): NEU EINGENOMMEN – zu lastData hinzugefügt`);
          lastData.push({ ID: factory.ID, NextCapture: factory.NextCapture });
-         sendDiscordNotification(
-            'Die Fabrik wurde erfolgreich eingenommen!',
-            `> Typ: ${factory.Type}${itemInfo}`,
-            0x00a800,
-            false,
-            'Fabrik'
-         );
+         sendDiscordNotification('Die Fabrik wurde erfolgreich eingenommen!', `> Typ: ${factory.Type}${itemInfo}`, 0x00a800, false, 'Fabrik');
       }
    });
 
    // Einträge in lastData, die nicht mehr in ownFactories sind => Fabrik verloren
+   console.log('[checkFactoryAttacks] Prüfe auf verlorene Fabriken...');
    for (const lastEntry of lastData.slice()) {
       const stillOwned = ownFactories.find((f) => f.ID == lastEntry.ID);
       if (stillOwned) continue;
 
+      console.log(`[checkFactoryAttacks] Fabrik ID=${lastEntry.ID} nicht mehr in own_factories – als verloren markiert`);
       const objWithIdIndex = lastData.findIndex((obj) => obj.ID === lastEntry.ID);
       if (objWithIdIndex > -1) {
          const memberlist = await getData(findUserWithToken.id, '/group/members');
-         if (!memberlist) return;
+         if (!memberlist) {
+            console.log('[checkFactoryAttacks] API Call /group/members fehlgeschlagen – Abbruch');
+            return;
+         }
 
          const onlinePlayers = memberlist.filter((f) => f.Online == 1);
+         console.log(`[checkFactoryAttacks] Mitgliederliste: ${memberlist.length} Mitglieder, ${onlinePlayers.length} online`);
+
          const factoryData = allFactories ? allFactories.find((f) => f.ID == lastEntry.ID) : null;
+         if (!factoryData) {
+            console.log(`[checkFactoryAttacks] Fabrik ID=${lastEntry.ID} nicht in /group/factories gefunden – kein Discord-Alert`);
+         }
 
          if (factoryData) {
             const itemInfo = factoryData.Item ? `\n> Item: ${factoryData.Item.Name}` : '';
+            console.log(`[checkFactoryAttacks] Sende Discord-Alert: Fabrik ID=${lastEntry.ID} (${factoryData.Type}) verloren, Offlineattack=${onlinePlayers.length === 0}`);
             sendDiscordNotification(
                'Die Fabrik wurde eingenommen!',
                `> Typ: ${factoryData.Type}${itemInfo}${onlinePlayers.length === 0 ? '\n> Status: Offlineattack' : ''}`,
@@ -234,6 +252,7 @@ async function checkFactoryAttacks() {
    gwData.lastFactoryData = JSON.stringify(lastData);
 
    await gwData.save();
+   console.log(`[checkFactoryAttacks] Abgeschlossen – ${lastData.length} Fabrik(en) in DB gespeichert`);
 }
 
 async function checkStorageWeight() {
