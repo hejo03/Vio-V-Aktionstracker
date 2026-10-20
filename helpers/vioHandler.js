@@ -6,8 +6,8 @@ require('dotenv').config();
 
 const CLIENT_ID = process.env.CLIENT_ID;
 const CLIENT_SECRET = process.env.CLIENT_SECRET;
-const redirectUri = process.env.redirectUri;
 const API_URL = 'https://apiv1.vio-v.com';
+const API_V3_URL = `${API_URL}/api/v3`;
 
 async function fetchOnlinePlayers() {
    try {
@@ -28,7 +28,6 @@ async function getAccessToken(userId) {
       client_secret: CLIENT_SECRET,
       refresh_token: user.vio_refresh_token,
       grant_type: 'refresh_token',
-      redirect_uri: redirectUri,
    });
 
    try {
@@ -37,9 +36,10 @@ async function getAccessToken(userId) {
       });
 
       const { access_token, refresh_token } = token_data.data;
+      if (!access_token) throw new Error('Vio OAuth response did not contain an access token');
 
       user.vio_access_token = access_token;
-      user.vio_refresh_token = refresh_token;
+      if (refresh_token) user.vio_refresh_token = refresh_token;
       await user.save();
       return access_token;
    } catch (error) {
@@ -47,7 +47,9 @@ async function getAccessToken(userId) {
          `Vio-API Error: ${error.config?.url || API_URL}/api/oauth2/token - ${error.response?.status} - ${error.response?.statusText} - ${error.response?.data?.error_description || error.message}`
       );
 
-      if (error.response?.data?.error_description?.includes('revoked')) {
+      const oauthError = error.response?.data?.error;
+      const errorDescription = error.response?.data?.error_description || error.message;
+      if (oauthError === 'invalid_grant' || errorDescription.toLowerCase().includes('revoked')) {
          user.vio_access_token = null;
          user.vio_refresh_token = null;
          await user.save();
@@ -65,24 +67,26 @@ async function getData(userId, path) {
       vio_access_token = await getAccessToken(user.id);
    }
 
-   const accessTokenData = jwt.decode(vio_access_token);
-   if (!accessTokenData || accessTokenData.exp < Math.floor(Date.now() / 1000)) {
+   const accessTokenData = vio_access_token ? jwt.decode(vio_access_token) : null;
+   if (!accessTokenData || typeof accessTokenData.exp !== 'number' || accessTokenData.exp <= Math.floor(Date.now() / 1000)) {
       vio_access_token = await getAccessToken(user.id);
    }
 
    if (!vio_access_token) return null;
 
    try {
-      const data = await axios.get(`${API_URL}/api/v3${path}`, {
+      const data = await axios.get(`${API_V3_URL}${path}`, {
          headers: { Authorization: `Bearer ${vio_access_token}` },
       });
       return data.data;
    } catch (error) {
       console.log(
-         `Vio-API Error: ${error.config?.url || `${API_URL}/api/v3${path}`} - ${error.response?.status} - ${error.response?.statusText} - ${error.response?.data?.error_description || error.message}`
+         `Vio-API Error: ${error.config?.url || `${API_V3_URL}${path}`} - ${error.response?.status} - ${error.response?.statusText} - ${error.response?.data?.error_description || error.message}`
       );
 
-      if (error.response?.data?.error_description?.includes('revoked')) {
+      const oauthError = error.response?.data?.error;
+      const errorDescription = error.response?.data?.error_description || error.message;
+      if (oauthError === 'invalid_grant' || errorDescription.toLowerCase().includes('revoked')) {
          user.vio_access_token = null;
          user.vio_refresh_token = null;
          await user.save();

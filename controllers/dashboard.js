@@ -18,6 +18,13 @@ const GROUP_FACTORIES = {
    12: { type: 'Geldwäscherei', item: 'Gereinigter Geldschein' },
 };
 
+function mapFactories(factories) {
+   return factories.map((factory) => ({
+      ...factory,
+      ...(GROUP_FACTORIES[factory.ID] || { type: 'Fabrik', item: 'Unbekanntes Produkt' }),
+   }));
+}
+
 exports.index = async (req, res) => {
    res.render('tracker/index', {
       title: 'Dashboard',
@@ -161,9 +168,7 @@ exports.groupOverview = async (req, res) => {
       areas = await getData(req.user.id, '/group/areas');
    } else {
       const rawFactories = await getData(req.user.id, '/group/factories');
-      ownFactories = rawFactories
-         ? rawFactories.map((f) => ({ ...f, ...GROUP_FACTORIES[f.ID] }))
-         : null;
+      ownFactories = rawFactories ? mapFactories(rawFactories) : null;
    }
 
    const rawVehicles = await getData(req.user.id, '/group/vehicles');
@@ -201,6 +206,55 @@ exports.groupOverview = async (req, res) => {
       maxWeight,
       storagePercent: maxWeight > 0 ? Math.floor((totalWeight / maxWeight) * 100) : 0,
       groupType: config.groupType,
+   });
+};
+
+exports.factories = async (req, res) => {
+   const [rawFactories, gwData] = await Promise.all([
+      getData(req.user.id, '/group/factories'),
+      db.models.GWData.findByPk(1),
+   ]);
+   let trackedFactories = [];
+   let trackingDataAvailable = true;
+
+   if (gwData && gwData.lastFactoryData) {
+      try {
+         const parsedData = JSON.parse(gwData.lastFactoryData);
+         if (!Array.isArray(parsedData)) throw new Error('Stored factory monitoring data is not an array');
+         trackedFactories = parsedData;
+      } catch (error) {
+         trackingDataAvailable = false;
+         console.error(`Could not read stored factory monitoring data: ${error.message}`);
+      }
+   }
+
+   const currentFactories = rawFactories ? mapFactories(rawFactories) : [];
+   const trackedFactoryRows = trackingDataAvailable
+      ? mapFactories(trackedFactories).map((factory) => {
+           const currentFactory = currentFactories.find((current) => String(current.ID) === String(factory.ID));
+           return {
+              ...factory,
+              comparisonAvailable: rawFactories !== null,
+              currentlyOwned: Boolean(currentFactory),
+              currentNextCapture: currentFactory ? currentFactory.NextCapture : null,
+              captureChanged: Boolean(
+                 currentFactory &&
+                    String(currentFactory.NextCapture == null ? '' : currentFactory.NextCapture) !==
+                       String(factory.NextCapture == null ? '' : factory.NextCapture)
+              ),
+           };
+        })
+      : [];
+
+   res.render('tracker/factories', {
+      title: 'Fabrik-Übersicht',
+      factories: currentFactories,
+      factoriesAvailable: rawFactories !== null,
+      factoryCount: currentFactories.length,
+      trackedFactories: trackedFactoryRows,
+      trackingDataAvailable,
+      lastFactoryCheck: gwData ? gwData.lastFactoryCheck : null,
+      invalidToken: Boolean(gwData && gwData.invalidToken),
    });
 };
 

@@ -78,6 +78,8 @@ Which 1-minute job runs depends on `GROUP_TYPE`:
 
 Factory IDs are mapped to type and product via the static `GROUP_FACTORIES` constant in `dashboard.js`. Member permissions are parsed from JSON, `item_XXX` entries filtered out, and translated to German labels. The permissions column is only visible to users with `Role.isLeader === true`.
 
+The authenticated `/factories` route renders the squad factory overview using `/group/factories`; the navigation link is shown in squad mode.
+
 ### Discord integration
 
 Two `WebhookClient` instances in `utility.js`:
@@ -91,6 +93,7 @@ Copy `.env.example` to `.env`. Required variables:
 - `CLIENT_ID`, `CLIENT_SECRET`, `redirectUri` — Vio-V OAuth app credentials
 - `DB_USERNAME`, `DB_PASSWORD`, `DB_DATABASE`, `DB_HOST` — MySQL connection
 - `VIO_GROUP_ID`, `GANG_NAME` — identifies the gang in API responses
+- `ADMIN_CHAR_ID` — optional Vio character ID that always receives leader permissions (rank 0)
 - `DISCORD_WEBHOOK`, `NOTIFY_DISCORD_WEBHOOK`, `DC_PING_ROLE` — Discord output
 - `GROUP_TYPE` — `gang` (default) tracks gangwar territories; `squad` tracks factories
 - `CUSTOM_FACTORY_ATTACK_MESSAGE` — custom text for factory attack Discord pings (squad mode)

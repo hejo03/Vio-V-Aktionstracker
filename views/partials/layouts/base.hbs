@@ -85,6 +85,9 @@
                         <li><a href="/gwStorage" class="nav-link px-2">Lagerplatz</a></li>
                         {{/unless}}
                         <li><a href="/group" class="nav-link px-2 link-{{ternary (eq '/group' req.originalUrl) 'active' '' }}">Gruppe</a></li>
+                        {{#if (eq groupType 'squad')}}
+                        <li><a href="/factories" class="nav-link px-2 link-{{ternary (eq '/factories' req.originalUrl) 'active' '' }}">Fabriken</a></li>
+                        {{/if}}
                         {{/if}} {{#if account.Role.isLeader}}
                         <li class="nav-item dropdown">
                             <a

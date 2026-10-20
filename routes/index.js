@@ -34,6 +34,7 @@ router.get('/operations/stats', auth.isAuthenticated, operationController.statis
 
 router.get('/gwStorage', auth.isAuthenticated, dashboardController.calcGWStorage);
 router.get('/group', auth.isAuthenticated, dashboardController.groupOverview);
+router.get('/factories', auth.isAuthenticated, dashboardController.factories);
 
 /* Profile & Settings System */
 router.get('/profile', auth.isAuthenticated, dashboardController.profile);

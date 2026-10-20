@@ -24,6 +24,15 @@ module.exports = () => {
                },
             ],
          });
+
+         if (req.user && config.adminCharId && String(req.user.charId) === String(config.adminCharId)) {
+            req.user.Role = {
+               ...(req.user.Role ? req.user.Role.get({ plain: true }) : {}),
+               name: 'Admin',
+               permissionLevel: 0,
+               isLeader: true,
+            };
+         }
       }
       res.locals.version = version;
       res.locals.gangName = gangName;
