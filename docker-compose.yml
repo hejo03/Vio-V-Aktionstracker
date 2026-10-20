@@ -1,9 +1,3 @@
-networks:
-   web:
-      external: true
-   internal:
-      external: false
-
 services:
    tracker:
       build:
@@ -31,8 +25,6 @@ services:
       image: mysql:8.0
       container_name: mysql-db-tracker
       restart: unless-stopped
-      ports:
-         - 3307:3306
       env_file: .env
       environment:
          MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
@@ -41,7 +33,7 @@ services:
          TZ: Europe/Berlin
       networks:
          - internal
-         - web
+         # - web
       labels:
          - traefik.enable=false
       volumes:
@@ -77,3 +69,9 @@ services:
 
 volumes:
    mysql-data:
+
+networks:
+   proxy:
+      external: true
+   internal:
+      external: false

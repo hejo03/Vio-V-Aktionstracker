@@ -1,7 +1,7 @@
 require('dotenv').config();
 exports.config = {
    gangName: process.env.GANG_NAME || 'GANG_NAME',
-   version: '1.1',
+   version: '1.2',
    scopes: ['identify'],
    logHook: process.env.DISCORD_WEBHOOK || 'YOUR_DISCORD_WEBHOOK',
    groupId: process.env.VIO_GROUP_ID || 'YOUR_VIO_GROUP_ID',
