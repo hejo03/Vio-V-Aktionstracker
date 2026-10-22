@@ -4,24 +4,24 @@ const { getData } = require('../helpers/vioHandler');
 const { config } = require('../config');
 
 const GROUP_FACTORIES = {
-   1: { type: 'Schwarzpulverfabrik', item: 'Schwarzpulver' },
-   2: { type: 'Gießerei', item: 'Metallteile' },
-   3: { type: 'Geldwäscherei', item: 'Gereinigter Geldschein' },
-   4: { type: 'Gießerei', item: 'Metallteile' },
-   5: { type: 'Gießerei', item: 'Metallteile' },
-   6: { type: 'Gießerei', item: 'Metallteile' },
-   7: { type: 'Geldwäscherei', item: 'Gereinigter Geldschein' },
-   8: { type: 'Geldwäscherei', item: 'Gereinigter Geldschein' },
-   9: { type: 'Munitionsfabrik', item: 'Munition D' },
-   10: { type: 'Munitionsfabrik', item: 'Munition D' },
-   11: { type: 'Gießerei', item: 'Metallteile' },
-   12: { type: 'Geldwäscherei', item: 'Gereinigter Geldschein' },
+   1: { type: 'Schwarzpulverfabrik', name: '2. See', item: 'Schwarzpulver' },
+   2: { type: 'Gießerei', name: 'Grapeseed', item: 'Metallteile' },
+   3: { type: 'Geldwäscherei', name: 'Terminal 1', item: 'Gereinigter Geldschein' },
+   4: { type: 'Gießerei', name: 'Windpark', item: 'Metallteile' },
+   5: { type: 'Schwarzpulverfabrik', name: '3. See', item: 'Schwarzpulver' },
+   6: { type: 'Gießerei', name: 'Ölfelder', item: 'Metallteile' },
+   7: { type: 'Geldwäscherei', name: 'Grapeseed', item: 'Gereinigter Geldschein' },
+   8: { type: 'Geldwäscherei', name: '1. See', item: 'Gereinigter Geldschein' },
+   9: { type: 'Munitionsfabrik', name: 'Cayo Perico 1', item: 'Munition D' },
+   10: { type: 'Munitionsfabrik', name: 'Cayo Perico 2', item: 'Munition D' },
+   11: { type: 'Gießerei', name: 'Vinewood', item: 'Metallteile' },
+   12: { type: 'Geldwäscherei', name: 'Terminal 2', item: 'Gereinigter Geldschein' },
 };
 
 function mapFactories(factories) {
    return factories.map((factory) => ({
       ...factory,
-      ...(GROUP_FACTORIES[factory.ID] || { type: 'Fabrik', item: 'Unbekanntes Produkt' }),
+      ...(GROUP_FACTORIES[factory.ID] || { type: 'Fabrik', name: 'Unbekannter Standort', item: 'Unbekanntes Produkt' }),
    }));
 }
 

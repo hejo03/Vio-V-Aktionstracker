@@ -44,6 +44,7 @@
                             <tr>
                                 <th>#</th>
                                 <th>Fabrik</th>
+                                <th>Standort</th>
                                 <th>Produkt</th>
                                 <th>Nächste Einnahme</th>
                             </tr>
@@ -53,6 +54,7 @@
                             <tr>
                                 <td class="text-muted">{{this.ID}}</td>
                                 <td>{{this.type}}</td>
+                                <td>{{this.name}}</td>
                                 <td><span class="badge bg-secondary">{{this.item}}</span></td>
                                 <td>
                                     {{#if this.NextCapture}}
@@ -85,6 +87,7 @@
                         <tr>
                             <th>#</th>
                             <th>Fabrik</th>
+                            <th>Standort</th>
                             <th>Gespeicherte Einnahme</th>
                             <th>Aktuelle API-Einnahme</th>
                             <th>Status</th>
@@ -95,6 +98,7 @@
                         <tr>
                             <td class="text-muted">{{this.ID}}</td>
                             <td>{{this.type}}</td>
+                            <td>{{this.name}}</td>
                             <td>
                                 {{#if this.NextCapture}}
                                 {{formatTime (multi this.NextCapture 1000)}}
