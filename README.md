@@ -5,7 +5,7 @@ Eine Web-App zum Tracken von Gang-Aktionen im Online-Spiel **Vio-V**. Sie verbin
 **Features:**
 
 - Aktionsverwaltung mit Punktesystem und Auszahlungsberechnung
-- Automatische Überwachung von Gangwar-Angriffen (jede Minute) via Cron
+- Automatische Überwachung von Gangwar-Angriffen und der Collector-Spielergrenze (jede Minute) via Cron
 - Speicher-Gewichtsalarm bei >80 % Auslastung (stündlich)
 - Discord-Webhooks für Kampfmeldungen und Benachrichtigungen
 - Rollen- & Rechteverwaltung für Gang-Mitglieder
@@ -46,25 +46,26 @@ cp .env.example .env
 
 Dann `.env` befüllen:
 
-| Variable                 | Beschreibung                                          |
-| ------------------------ | ----------------------------------------------------- |
-| `NODE_ENV`               | `development` oder `production`                       |
-| `PORT`                   | HTTP-Port der App (Standard: `3000`)                  |
-| `DOMAIN`                 | Öffentliche Domain (z. B. `tracker.example.com`)      |
-| `CLIENT_ID`              | Vio-V OAuth2 Client ID                                |
-| `CLIENT_SECRET`          | Vio-V OAuth2 Client Secret                            |
-| `DB_USERNAME`            | MySQL-Benutzername                                    |
-| `DB_PASSWORD`            | MySQL-Passwort                                        |
-| `DB_DATABASE`            | Datenbankname (Standard: `tracker`)                   |
-| `DB_HOST`                | Datenbank-Host (Standard: `mysql-db-tracker`)         |
-| `DB_PORT`                | Datenbank-Port (Standard: `3306`)                     |
-| `VIO_GROUP_ID`           | Numerische Gruppen-ID eurer Gang/Squad (steht im UCP) |
-| `GANG_NAME`              | Anzeigename der Gang                                  |
-| `GROUP_TYPE`             | `gang` oder `squad`                                   |
-| `DISCORD_WEBHOOK`        | Webhook-URL für Betriebslogs                          |
-| `NOTIFY_DISCORD_WEBHOOK` | Webhook-URL für Kampfbenachrichtigungen               |
-| `DC_PING_ROLE`           | Discord Rollen-ID für @-Pings                         |
-| `CUSTOM_ATTACK_MESSAGE`  | Optionaler Text für Angriffspings                     |
+| Variable                      | Beschreibung                                          |
+| ----------------------------- | ----------------------------------------------------- |
+| `NODE_ENV`                    | `development` oder `production`                       |
+| `PORT`                        | HTTP-Port der App (Standard: `3000`)                  |
+| `DOMAIN`                      | Öffentliche Domain (z. B. `tracker.example.com`)      |
+| `CLIENT_ID`                   | Vio-V OAuth2 Client ID                                |
+| `CLIENT_SECRET`               | Vio-V OAuth2 Client Secret                            |
+| `DB_USERNAME`                 | MySQL-Benutzername                                    |
+| `DB_PASSWORD`                 | MySQL-Passwort                                        |
+| `DB_DATABASE`                 | Datenbankname (Standard: `tracker`)                   |
+| `DB_HOST`                     | Datenbank-Host (Standard: `mysql-db-tracker`)         |
+| `DB_PORT`                     | Datenbank-Port (Standard: `3306`)                     |
+| `VIO_GROUP_ID`                | Numerische Gruppen-ID eurer Gang/Squad (steht im UCP) |
+| `GANG_NAME`                   | Anzeigename der Gang                                  |
+| `GROUP_TYPE`                  | `gang` oder `squad`                                   |
+| `DISCORD_WEBHOOK`             | Webhook-URL für Betriebslogs                          |
+| `NOTIFY_DISCORD_WEBHOOK`      | Webhook-URL für Kampfbenachrichtigungen               |
+| `PLAYERLIMIT_DISCORD_WEBHOOK` | Separater Webhook für Collector-Alarme                |
+| `DC_PING_ROLE`                | Discord Rollen-ID für @-Pings                         |
+| `CUSTOM_ATTACK_MESSAGE`       | Optionaler Text für Angriffspings                     |
 
 ---
 

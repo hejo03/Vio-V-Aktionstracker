@@ -17,6 +17,7 @@ module.exports = (sequelize, DataTypes) => {
          lastFactoryData: DataTypes.TEXT('long'),
          invalidToken: { type: DataTypes.BOOLEAN, defaultValue: false },
          notifyFullStorage: { type: DataTypes.BOOLEAN, defaultValue: false },
+         collectorThresholdReached: { type: DataTypes.BOOLEAN, defaultValue: false },
       },
       {
          sequelize,

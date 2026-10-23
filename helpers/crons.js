@@ -1,6 +1,6 @@
 let cron = require('node-cron');
-const { sendLog, sendDiscordNotification } = require('../helpers/utility');
-const { getData } = require('./vioHandler');
+const { sendLog, sendDiscordNotification, sendCollectorNotification } = require('../helpers/utility');
+const { fetchOnlinePlayers, getData } = require('./vioHandler');
 const { Op } = require('sequelize');
 const { config } = require('../config');
 const { groupType } = config;
@@ -8,6 +8,7 @@ const { getFactoryDetails } = require('./factories');
 const db = require('../models').sequelize;
 const moment = require('moment');
 moment.locale('de');
+let collectorCheckRunning = false;
 
 //alle 1min
 cron.schedule(
@@ -17,6 +18,25 @@ cron.schedule(
          await checkFactoryAttacks();
       } else {
          await checkGangwarAttacks();
+      }
+   },
+   {
+      noOverlap: true,
+      timezone: 'Europe/Berlin',
+   }
+);
+
+cron.schedule(
+   '*/1 * * * *',
+   async () => {
+      if (collectorCheckRunning) return;
+      collectorCheckRunning = true;
+      try {
+         await checkCollectorThreshold();
+      } catch (error) {
+         console.error('Collector monitoring failed:', error);
+      } finally {
+         collectorCheckRunning = false;
       }
    },
    {
@@ -165,9 +185,7 @@ async function checkFactoryAttacks() {
 
    ownFactories.forEach((factory) => {
       const factoryDetails = getFactoryDetails(factory.ID);
-      const factoryDescription = `> Fabrik: ${factoryDetails.name} (#${factory.ID})\n> Typ: ${factoryDetails.type}\n> Next Capture: ${formatNextCapture(
-         factory.NextCapture
-      )}`;
+      const factoryDescription = `> Fabrik: ${factoryDetails.name} (#${factory.ID})\n> Typ: ${factoryDetails.type}\n> Next Capture: ${formatNextCapture(factory.NextCapture)}`;
       let lastEntry = lastData.find((f) => f.ID == factory.ID);
       const index = lastData.findIndex((f) => f.ID == factory.ID);
 
@@ -176,7 +194,7 @@ async function checkFactoryAttacks() {
             // Migration: altes Format ohne NextCapture → aktualisieren ohne Alert
             lastData[index] = { ID: factory.ID, NextCapture: factory.NextCapture };
          } else if (lastEntry.NextCapture !== factory.NextCapture) {
-            sendDiscordNotification('Angriff abgewehrt – Fabrik gehalten!', factoryDescription, 0x00a800, true, 'Fabrik');
+            sendDiscordNotification('Angriff abgewehrt - Fabrik gehalten!', factoryDescription, 0x00a800, true, 'Fabrik');
             lastData[index] = { ID: factory.ID, NextCapture: factory.NextCapture };
          }
       } else {
@@ -197,9 +215,8 @@ async function checkFactoryAttacks() {
          const factoryDetails = getFactoryDetails(lastEntry.ID);
          sendDiscordNotification(
             'Fabrik verloren!',
-            `> Fabrik: ${factoryDetails.name} (#${lastEntry.ID})\n> Typ: ${factoryDetails.type}\n> Next Capture: ${formatNextCapture(
-               lastEntry.NextCapture
-            )}${onlinePlayers.length === 0 ? '\n> Status: Offlineattack' : ''
+            `> Fabrik: ${factoryDetails.name} (#${lastEntry.ID})\n> Typ: ${factoryDetails.type}\n> Next Capture: ${formatNextCapture(lastEntry.NextCapture)}${
+               onlinePlayers.length === 0 ? '\n> Status: Offlineattack' : ''
             }`,
             0xa83232,
             false,
@@ -258,5 +275,43 @@ async function checkStorageWeight() {
          0xa83232,
          false
       );
+   }
+}
+
+async function checkCollectorThreshold() {
+   const gwData = await getOrInitGWData(db);
+   if (!gwData || gwData.invalidToken) return;
+
+   const user = await findValidUser(db, gwData);
+   if (!user) return;
+
+   const [settings, onlinePlayerCount] = await Promise.all([getData(user.id, '/system/settings'), fetchOnlinePlayers()]);
+   if (!Array.isArray(settings) || onlinePlayerCount === null) return;
+
+   const thresholdSetting = settings.find((setting) => setting.Setting === 'TotalPlayersForSkip');
+   const playerThreshold = Number(thresholdSetting?.Value);
+   if (!Number.isFinite(playerThreshold) || playerThreshold <= 0) {
+      console.error('Collector monitoring: system/settings did not contain a valid TotalPlayersForSkip value');
+      return;
+   }
+
+   if (onlinePlayerCount >= playerThreshold) {
+      if (gwData.collectorThresholdReached) return;
+
+      try {
+         await sendCollectorNotification(`Collector-Grenze erreicht: ${onlinePlayerCount} Spieler online (Grenze: ${playerThreshold}).`);
+      } catch (error) {
+         console.error('Collector notification failed:', error);
+         return;
+      }
+
+      gwData.collectorThresholdReached = true;
+      await gwData.save();
+      return;
+   }
+
+   if (gwData.collectorThresholdReached) {
+      gwData.collectorThresholdReached = false;
+      await gwData.save();
    }
 }

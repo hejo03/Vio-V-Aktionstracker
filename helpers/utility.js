@@ -1,6 +1,6 @@
 const fetch = require('fetch');
 const { config } = require('../config');
-const { logHook, notificationHook, dcMemberRole } = config;
+const { logHook, notificationHook, collectorNotificationHook, dcMemberRole } = config;
 const { WebhookClient, EmbedBuilder } = require('discord.js');
 
 function generateRandomString(length) {
@@ -58,13 +58,17 @@ async function sendDiscordNotification(title, description, color = 0x2b2d31, pin
    if (!webhook) return;
 
    const embed = new EmbedBuilder();
-   embed
-      .setAuthor({ name: author })
-      .setColor(color)
-      .setTimestamp()
-      .setTitle(title)
-      .setDescription(description);
+   embed.setAuthor({ name: author }).setColor(color).setTimestamp().setTitle(title).setDescription(description);
    webhook.send({ username: 'Aktionstracker', content: ping ? `<@&${dcMemberRole}>` : '', embeds: [embed] });
+}
+
+async function sendCollectorNotification(message) {
+   if (!collectorNotificationHook) {
+      throw new Error('PLAYERLIMIT_DISCORD_WEBHOOK is not configured');
+   }
+
+   const webhook = new WebhookClient({ url: collectorNotificationHook });
+   await webhook.send({ username: 'Aktionstracker', content: message });
 }
 
 module.exports = {
@@ -73,4 +77,5 @@ module.exports = {
    catchAsyncErrors,
    sendLog,
    sendDiscordNotification,
+   sendCollectorNotification,
 };

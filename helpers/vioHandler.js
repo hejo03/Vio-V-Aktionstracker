@@ -12,10 +12,14 @@ const API_V3_URL = `${API_URL}/api/v3`;
 async function fetchOnlinePlayers() {
    try {
       const response = await axios.get(`${API_URL}/online_players`);
-      return response.data.online_players;
+      const onlinePlayers = Number(response.data?.online_players);
+      if (!Number.isFinite(onlinePlayers) || onlinePlayers < 0) {
+         throw new Error('Online-player API response did not contain a valid player count');
+      }
+      return onlinePlayers;
    } catch (error) {
       console.error('fetchOnlinePlayers error:', error.message);
-      return 0;
+      return null;
    }
 }
 
