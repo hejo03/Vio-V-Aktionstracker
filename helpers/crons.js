@@ -3,7 +3,8 @@ const { sendLog, sendDiscordNotification } = require('../helpers/utility');
 const { getData } = require('./vioHandler');
 const { Op } = require('sequelize');
 const { config } = require('../config');
-const { CUSTOM_ATTACK_MESSAGE, groupType } = config;
+const { groupType } = config;
+const { getFactoryDetails } = require('./factories');
 const db = require('../models').sequelize;
 const moment = require('moment');
 moment.locale('de');
@@ -63,6 +64,15 @@ async function findValidUser(db, gwData) {
       sendLog('Fehler: Es wurde kein User mit einem gültigem API Token. Bitte auf der Aktionstracker Seite neu anmelden.', 2);
    }
    return user;
+}
+
+function formatNextCapture(nextCapture) {
+   if (nextCapture == null) return 'Unbekannt';
+
+   const captureDate = moment.unix(Number(nextCapture)).utc();
+   if (!captureDate.isValid()) return String(nextCapture);
+
+   return `${nextCapture} (${captureDate.format('DD.MM.YYYY HH:mm:ss [UTC]')})`;
 }
 
 async function checkGangwarAttacks() {
@@ -154,6 +164,10 @@ async function checkFactoryAttacks() {
    let lastData = gwData.lastFactoryData ? JSON.parse(gwData.lastFactoryData) : [];
 
    ownFactories.forEach((factory) => {
+      const factoryDetails = getFactoryDetails(factory.ID);
+      const factoryDescription = `> Fabrik: ${factoryDetails.name} (#${factory.ID})\n> Typ: ${factoryDetails.type}\n> Next Capture: ${formatNextCapture(
+         factory.NextCapture
+      )}`;
       let lastEntry = lastData.find((f) => f.ID == factory.ID);
       const index = lastData.findIndex((f) => f.ID == factory.ID);
 
@@ -162,12 +176,12 @@ async function checkFactoryAttacks() {
             // Migration: altes Format ohne NextCapture → aktualisieren ohne Alert
             lastData[index] = { ID: factory.ID, NextCapture: factory.NextCapture };
          } else if (lastEntry.NextCapture !== factory.NextCapture) {
-            sendDiscordNotification(CUSTOM_ATTACK_MESSAGE, `> Fabrik #${factory.ID}`, 0xa83232, true, 'Fabrik');
+            sendDiscordNotification('Angriff abgewehrt – Fabrik gehalten!', factoryDescription, 0x00a800, true, 'Fabrik');
             lastData[index] = { ID: factory.ID, NextCapture: factory.NextCapture };
          }
       } else {
          lastData.push({ ID: factory.ID, NextCapture: factory.NextCapture });
-         sendDiscordNotification('Die Fabrik wurde erfolgreich eingenommen!', `> Fabrik #${factory.ID}`, 0x00a800, false, 'Fabrik');
+         sendDiscordNotification('Die Fabrik wurde erfolgreich eingenommen!', factoryDescription, 0x00a800, false, 'Fabrik');
       }
    });
 
@@ -180,9 +194,13 @@ async function checkFactoryAttacks() {
          if (!memberlist) return;
 
          const onlinePlayers = memberlist.filter((f) => f.Online == 1);
+         const factoryDetails = getFactoryDetails(lastEntry.ID);
          sendDiscordNotification(
-            'Die Fabrik wurde eingenommen!',
-            `> Fabrik #${lastEntry.ID}${onlinePlayers.length === 0 ? '\n> Status: Offlineattack' : ''}`,
+            'Fabrik verloren!',
+            `> Fabrik: ${factoryDetails.name} (#${lastEntry.ID})\n> Typ: ${factoryDetails.type}\n> Next Capture: ${formatNextCapture(
+               lastEntry.NextCapture
+            )}${onlinePlayers.length === 0 ? '\n> Status: Offlineattack' : ''
+            }`,
             0xa83232,
             false,
             'Fabrik'
