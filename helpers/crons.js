@@ -12,7 +12,7 @@ let playerLimitCheckRunning = false;
 
 //alle 1min
 cron.schedule(
-   '*/1 * * * *',
+   '*/30 * * * * *',
    async () => {
       if (groupType === 'squad') {
          await checkFactoryAttacks();
