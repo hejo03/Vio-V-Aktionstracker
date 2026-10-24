@@ -1,6 +1,6 @@
 const fetch = require('fetch');
 const { config } = require('../config');
-const { logHook, notificationHook, collectorNotificationHook, dcMemberRole } = config;
+const { logHook, notificationHook, playerLimitNotificationHook, dcMemberRole } = config;
 const { WebhookClient, EmbedBuilder } = require('discord.js');
 
 function generateRandomString(length) {
@@ -62,13 +62,19 @@ async function sendDiscordNotification(title, description, color = 0x2b2d31, pin
    webhook.send({ username: 'Aktionstracker', content: ping ? `<@&${dcMemberRole}>` : '', embeds: [embed] });
 }
 
-async function sendCollectorNotification(message) {
-   if (!collectorNotificationHook) {
-      throw new Error('PLAYERLIMIT_DISCORD_WEBHOOK is not configured');
+async function sendPlayerLimitNotification(onlinePlayerCount, playerThreshold) {
+   if (!playerLimitNotificationHook) {
+      throw new Error('PLAYER_LIMIT_DISCORD_WEBHOOK is not configured');
    }
 
-   const webhook = new WebhookClient({ url: collectorNotificationHook });
-   await webhook.send({ username: 'Aktionstracker', content: message });
+   const webhook = new WebhookClient({ url: playerLimitNotificationHook });
+   const embed = new EmbedBuilder()
+      .setTitle('Spielergrenze erreicht')
+      .setDescription(`Aktuell sind **${onlinePlayerCount} Spieler** online.\nDie Spielergrenze liegt bei **${playerThreshold} Spielern**.`)
+      .setColor(0xa83232)
+      .setTimestamp();
+
+   await webhook.send({ username: 'Aktionstracker', embeds: [embed] });
 }
 
 module.exports = {
@@ -77,5 +83,5 @@ module.exports = {
    catchAsyncErrors,
    sendLog,
    sendDiscordNotification,
-   sendCollectorNotification,
+   sendPlayerLimitNotification,
 };

@@ -36,7 +36,7 @@ No test suite or linter is configured. Code style is enforced by Prettier (180-c
 | [app.js](app.js)                                       | Express app, middleware stack, global error handler                                                            |
 | [config.js](config.js)                                 | Single source of truth for all `process.env` values                                                            |
 | [helpers/vioHandler.js](helpers/vioHandler.js)         | Vio-V API client: JWT expiry check, token refresh, all API calls                                               |
-| [helpers/crons.js](helpers/crons.js)                   | Cron jobs: factory/gangwar and collector-threshold monitors (every 1 min), storage weight check (every 60 min) |
+| [helpers/crons.js](helpers/crons.js)                   | Cron jobs: factory/gangwar and player-limit monitors (every 1 min), storage weight check (every 60 min) |
 | [helpers/seeder.js](helpers/seeder.js)                 | Seeds default `OperationType` rows on first start                                                              |
 | [helpers/utility.js](helpers/utility.js)               | Discord webhook client (`logHook`, `notificationHook`), logging helpers                                        |
 | [models/index.js](models/index.js)                     | Sequelize init: dynamically loads all model files, sets up associations                                        |
@@ -66,7 +66,7 @@ Which 1-minute job runs depends on `GROUP_TYPE`:
 
 - **`gang`** (default): `checkGangwarAttacks()` — fetches `/group/areas`, diffs `ownAreas` against `GWData.lastData`, sends Discord embeds on attack or territory loss.
 - **`squad`**: `checkFactoryAttacks()` — fetches `/group/factories` (returns `{ ID, GroupID, NextCapture }`), diffs against `GWData.lastFactoryData`, sends Discord embeds on attack (`NextCapture` changed) or factory loss (ID missing from response).
-- **Every minute** (both modes): `checkCollectorThreshold()` — reads `TotalPlayersForSkip` from `/system/settings` and the count from `/online_players`; sends one plain Discord message at/above the threshold and rearms after the count drops below it. The notification state persists in `GWData`.
+- **Every minute** (both modes): `checkPlayerLimit()` — reads `TotalPlayersForSkip` from `/system/settings` and the count from `/online_players`; sends one Discord embed at/above the threshold and rearms after the count drops below it. The notification state persists in `GWData`.
 - **Every 60 minutes** (both modes): `checkStorageWeight()` — fetches `/group/storage` + `/system/items`, alerts if total weight >80% capacity.
 
 ### Group overview (`/group` route)
@@ -89,7 +89,7 @@ Three `WebhookClient` uses in `utility.js`:
 
 - `logHook` → `DISCORD_WEBHOOK` env var (operational logs: Info / Important / Error / Action)
 - `notificationHook` → `NOTIFY_DISCORD_WEBHOOK` env var (war alerts with `DC_PING_ROLE` mention)
-- `collectorNotificationHook` → `PLAYERLIMIT_DISCORD_WEBHOOK` env var (plain collector-threshold alerts, no role ping)
+- `playerLimitNotificationHook` → `PLAYER_LIMIT_DISCORD_WEBHOOK` env var (player-limit embeds, no role ping)
 
 ## Environment variables
 
@@ -99,7 +99,7 @@ Copy `.env.example` to `.env`. Required variables:
 - `DB_USERNAME`, `DB_PASSWORD`, `DB_DATABASE`, `DB_HOST` — MySQL connection
 - `VIO_GROUP_ID`, `GANG_NAME` — identifies the gang in API responses
 - `ADMIN_CHAR_ID` — optional Vio character ID that always receives leader permissions (rank 0)
-- `DISCORD_WEBHOOK`, `NOTIFY_DISCORD_WEBHOOK`, `PLAYERLIMIT_DISCORD_WEBHOOK`, `DC_PING_ROLE` — Discord output
+- `DISCORD_WEBHOOK`, `NOTIFY_DISCORD_WEBHOOK`, `PLAYER_LIMIT_DISCORD_WEBHOOK`, `DC_PING_ROLE` — Discord output
 - `GROUP_TYPE` — `gang` (default) tracks gangwar territories; `squad` tracks factories
 - `CUSTOM_FACTORY_ATTACK_MESSAGE` — custom text for factory attack Discord pings (squad mode)
 - `DOMAIN` — used in OAuth redirect URI construction

@@ -1,5 +1,5 @@
 let cron = require('node-cron');
-const { sendLog, sendDiscordNotification, sendCollectorNotification } = require('../helpers/utility');
+const { sendLog, sendDiscordNotification, sendPlayerLimitNotification } = require('../helpers/utility');
 const { fetchOnlinePlayers, getData } = require('./vioHandler');
 const { Op } = require('sequelize');
 const { config } = require('../config');
@@ -8,7 +8,7 @@ const { getFactoryDetails } = require('./factories');
 const db = require('../models').sequelize;
 const moment = require('moment');
 moment.locale('de');
-let collectorCheckRunning = false;
+let playerLimitCheckRunning = false;
 
 //alle 1min
 cron.schedule(
@@ -29,14 +29,14 @@ cron.schedule(
 cron.schedule(
    '*/1 * * * *',
    async () => {
-      if (collectorCheckRunning) return;
-      collectorCheckRunning = true;
+      if (playerLimitCheckRunning) return;
+      playerLimitCheckRunning = true;
       try {
-         await checkCollectorThreshold();
+         await checkPlayerLimit();
       } catch (error) {
-         console.error('Collector monitoring failed:', error);
+         console.error('Player limit monitoring failed:', error);
       } finally {
-         collectorCheckRunning = false;
+         playerLimitCheckRunning = false;
       }
    },
    {
@@ -89,10 +89,15 @@ async function findValidUser(db, gwData) {
 function formatNextCapture(nextCapture) {
    if (nextCapture == null) return 'Unbekannt';
 
-   const captureDate = moment.unix(Number(nextCapture)).utc();
-   if (!captureDate.isValid()) return String(nextCapture);
+   const captureDate = new Date(Number(nextCapture) * 1000);
+   if (Number.isNaN(captureDate.getTime())) return 'Unbekannt';
 
-   return `${nextCapture} (${captureDate.format('DD.MM.YYYY HH:mm:ss [UTC]')})`;
+   return `${new Intl.DateTimeFormat('de-DE', {
+      timeZone: 'Europe/Berlin',
+      hour: '2-digit',
+      minute: '2-digit',
+      hourCycle: 'h23',
+   }).format(captureDate)} Uhr`;
 }
 
 async function checkGangwarAttacks() {
@@ -185,7 +190,7 @@ async function checkFactoryAttacks() {
 
    ownFactories.forEach((factory) => {
       const factoryDetails = getFactoryDetails(factory.ID);
-      const factoryDescription = `> Fabrik: ${factoryDetails.name} (#${factory.ID})\n> Typ: ${factoryDetails.type}\n> Next Capture: ${formatNextCapture(factory.NextCapture)}`;
+      const factoryDescription = `> Fabrik: ${factoryDetails.name} (#${factory.ID})\n> Typ: ${factoryDetails.type}\n> Nächster Angriff: ${formatNextCapture(factory.NextCapture)}`;
       let lastEntry = lastData.find((f) => f.ID == factory.ID);
       const index = lastData.findIndex((f) => f.ID == factory.ID);
 
@@ -215,7 +220,7 @@ async function checkFactoryAttacks() {
          const factoryDetails = getFactoryDetails(lastEntry.ID);
          sendDiscordNotification(
             'Fabrik verloren!',
-            `> Fabrik: ${factoryDetails.name} (#${lastEntry.ID})\n> Typ: ${factoryDetails.type}\n> Next Capture: ${formatNextCapture(lastEntry.NextCapture)}${
+            `> Fabrik: ${factoryDetails.name} (#${lastEntry.ID})\n> Typ: ${factoryDetails.type}\n> Nächster Angriff: ${formatNextCapture(lastEntry.NextCapture)}${
                onlinePlayers.length === 0 ? '\n> Status: Offlineattack' : ''
             }`,
             0xa83232,
@@ -278,7 +283,7 @@ async function checkStorageWeight() {
    }
 }
 
-async function checkCollectorThreshold() {
+async function checkPlayerLimit() {
    const gwData = await getOrInitGWData(db);
    if (!gwData || gwData.invalidToken) return;
 
@@ -291,27 +296,27 @@ async function checkCollectorThreshold() {
    const thresholdSetting = settings.find((setting) => setting.Setting === 'TotalPlayersForSkip');
    const playerThreshold = Number(thresholdSetting?.Value);
    if (!Number.isFinite(playerThreshold) || playerThreshold <= 0) {
-      console.error('Collector monitoring: system/settings did not contain a valid TotalPlayersForSkip value');
+      console.error('Player limit monitoring: system/settings did not contain a valid TotalPlayersForSkip value');
       return;
    }
 
    if (onlinePlayerCount >= playerThreshold) {
-      if (gwData.collectorThresholdReached) return;
+      if (gwData.playerLimitReached) return;
 
       try {
-         await sendCollectorNotification(`Collector-Grenze erreicht: ${onlinePlayerCount} Spieler online (Grenze: ${playerThreshold}).`);
+         await sendPlayerLimitNotification(onlinePlayerCount, playerThreshold);
       } catch (error) {
-         console.error('Collector notification failed:', error);
+         console.error('Player limit notification failed:', error);
          return;
       }
 
-      gwData.collectorThresholdReached = true;
+      gwData.playerLimitReached = true;
       await gwData.save();
       return;
    }
 
-   if (gwData.collectorThresholdReached) {
-      gwData.collectorThresholdReached = false;
+   if (gwData.playerLimitReached) {
+      gwData.playerLimitReached = false;
       await gwData.save();
    }
 }

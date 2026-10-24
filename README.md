@@ -5,7 +5,7 @@ Eine Web-App zum Tracken von Gang-Aktionen im Online-Spiel **Vio-V**. Sie verbin
 **Features:**
 
 - Aktionsverwaltung mit Punktesystem und Auszahlungsberechnung
-- Automatische Überwachung von Gangwar-Angriffen und der Collector-Spielergrenze (jede Minute) via Cron
+- Automatische Überwachung von Gangwar-Angriffen und der Spielergrenze (jede Minute) via Cron
 - Speicher-Gewichtsalarm bei >80 % Auslastung (stündlich)
 - Discord-Webhooks für Kampfmeldungen und Benachrichtigungen
 - Rollen- & Rechteverwaltung für Gang-Mitglieder
@@ -19,7 +19,7 @@ Eine Web-App zum Tracken von Gang-Aktionen im Online-Spiel **Vio-V**. Sie verbin
 - [pnpm](https://pnpm.io/) (`npm install -g pnpm`)
 - [Docker & Docker Compose](https://docs.docker.com/get-docker/) (für die Datenbank bzw. den Produktivbetrieb)
 - Ein Vio-V OAuth2-App-Eintrag (`CLIENT_ID` + `CLIENT_SECRET`)
-- Einen Discord-Server mit zwei Webhooks (Log + Benachrichtigung)
+- Einen Discord-Server mit drei Webhooks (Log, Benachrichtigung und Spielergrenze)
 
 ---
 
@@ -63,7 +63,7 @@ Dann `.env` befüllen:
 | `GROUP_TYPE`                  | `gang` oder `squad`                                   |
 | `DISCORD_WEBHOOK`             | Webhook-URL für Betriebslogs                          |
 | `NOTIFY_DISCORD_WEBHOOK`      | Webhook-URL für Kampfbenachrichtigungen               |
-| `PLAYERLIMIT_DISCORD_WEBHOOK` | Separater Webhook für Collector-Alarme                |
+| `PLAYER_LIMIT_DISCORD_WEBHOOK` | Separater Webhook für Spielergrenzen-Benachrichtigungen |
 | `DC_PING_ROLE`                | Discord Rollen-ID für @-Pings                         |
 | `CUSTOM_ATTACK_MESSAGE`       | Optionaler Text für Angriffspings                     |
 
