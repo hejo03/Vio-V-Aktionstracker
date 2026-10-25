@@ -11,9 +11,10 @@ services:
          - "traefik.http.routers.tracker.rule=Host(`${DOMAIN}`)"
          - "traefik.http.routers.tracker.entrypoints=websecure"
          - "traefik.http.routers.tracker.tls=true"
+         - "traefik.http.routers.tracker.tls.certresolver=cloudflare"
       networks:
          - internal
-         - web
+         - proxy
       depends_on:
          mysql-db-tracker:
             condition: service_healthy # Warte auf DB healthy
@@ -33,7 +34,6 @@ services:
          TZ: Europe/Berlin
       networks:
          - internal
-         # - web
       labels:
          - traefik.enable=false
       volumes:
