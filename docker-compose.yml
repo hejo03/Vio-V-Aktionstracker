@@ -36,6 +36,7 @@ services:
          # - web
       labels:
          - traefik.enable=false
+         - backup.db=mysql
       volumes:
          - mysql-data:/var/lib/mysql
       healthcheck:
