@@ -38,7 +38,7 @@ No test suite or linter is configured. Code style is enforced by Prettier (180-c
 | [helpers/vioHandler.js](helpers/vioHandler.js)         | Vio-V API client: JWT expiry check, token refresh, all API calls                                               |
 | [helpers/crons.js](helpers/crons.js)                   | Cron jobs: factory/gangwar and player-limit monitors (every 1 min), storage weight check (every 60 min) |
 | [helpers/seeder.js](helpers/seeder.js)                 | Seeds default `OperationType` rows on first start                                                              |
-| [helpers/utility.js](helpers/utility.js)               | Discord webhook client (`logHook`, `notificationHook`), logging helpers                                        |
+| [helpers/utility.js](helpers/utility.js)               | Discord message formatting and logging helpers                                                                |
 | [models/index.js](models/index.js)                     | Sequelize init: dynamically loads all model files, sets up associations                                        |
 | [controllers/login.js](controllers/login.js)           | OAuth2 PKCE flow with Vio-V; creates/updates User and seeds Roles on first login                               |
 | [controllers/dashboard.js](controllers/dashboard.js)   | Group overview, storage calc, stats — fetches live API data per request                                        |
@@ -46,7 +46,7 @@ No test suite or linter is configured. Code style is enforced by Prettier (180-c
 
 ### Database (Sequelize + MySQL)
 
-Models: `User`, `Role`, `Operation`, `OperationType`, `GWData`
+Models: `User`, `Role`, `Operation`, `OperationType`, `GWData`, `DiscordGuildConfig`
 
 - `GWData` is a **singleton row** (ID=1) that persists the last-known territory/factory state between cron runs.
 - `Role` rows are seeded automatically from `/group/ranks` on the very first login (when the table is empty).
@@ -85,11 +85,11 @@ The authenticated `/factories` route renders the squad factory overview using `/
 
 ### Discord integration
 
-Three `WebhookClient` uses in `utility.js`:
-
-- `logHook` → `DISCORD_WEBHOOK` env var (operational logs: Info / Important / Error / Action)
-- `notificationHook` → `NOTIFY_DISCORD_WEBHOOK` env var (war alerts with `DC_PING_ROLE` mention)
-- `playerLimitNotificationHook` → `PLAYER_LIMIT_DISCORD_WEBHOOK` env var (player-limit embeds, no role ping)
+Discord messages are sent by the bot in `helpers/discordBot.js`, configured with `DISCORD_BOT_TOKEN`.
+Each Discord server stores independent log, alert, and player-limit channels in `DiscordGuildConfig`.
+Server administrators configure them with `/tracker channel`; `/tracker message` sets an optional attack message,
+and `/tracker role` configures an optional alert mention. `/stats` reports current online players and the player limit.
+The bot presence displays the same player statistics.
 
 ## Environment variables
 
@@ -99,9 +99,8 @@ Copy `.env.example` to `.env`. Required variables:
 - `DB_USERNAME`, `DB_PASSWORD`, `DB_DATABASE`, `DB_HOST` — MySQL connection
 - `VIO_GROUP_ID`, `GANG_NAME` — identifies the gang in API responses
 - `ADMIN_CHAR_ID` — optional Vio character ID that always receives leader permissions (rank 0)
-- `DISCORD_WEBHOOK`, `NOTIFY_DISCORD_WEBHOOK`, `PLAYER_LIMIT_DISCORD_WEBHOOK`, `DC_PING_ROLE` — Discord output
+- `DISCORD_BOT_TOKEN` — Discord bot token; destination channels, custom alert message, and optional ping role are set with Discord commands
 - `GROUP_TYPE` — `gang` (default) tracks gangwar territories; `squad` tracks factories
-- `CUSTOM_FACTORY_ATTACK_MESSAGE` — custom text for factory attack Discord pings (squad mode)
 - `DOMAIN` — used in OAuth redirect URI construction
 
 ## Docker

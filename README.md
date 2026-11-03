@@ -7,7 +7,7 @@ Eine Web-App zum Tracken von Gang-Aktionen im Online-Spiel **Vio-V**. Sie verbin
 - Aktionsverwaltung mit Punktesystem und Auszahlungsberechnung
 - Automatische Überwachung von Gangwar-Angriffen und der Spielergrenze (jede Minute) via Cron
 - Speicher-Gewichtsalarm bei >80 % Auslastung (stündlich)
-- Discord-Webhooks für Kampfmeldungen und Benachrichtigungen
+- Discord-Bot für Kampfmeldungen, Spielergrenzen, Logs und aktuelle Spielerstatistiken
 - Rollen- & Rechteverwaltung für Gang-Mitglieder
 - OAuth2 PKCE Login über Vio-V
 
@@ -19,7 +19,7 @@ Eine Web-App zum Tracken von Gang-Aktionen im Online-Spiel **Vio-V**. Sie verbin
 - [pnpm](https://pnpm.io/) (`npm install -g pnpm`)
 - [Docker & Docker Compose](https://docs.docker.com/get-docker/) (für die Datenbank bzw. den Produktivbetrieb)
 - Ein Vio-V OAuth2-App-Eintrag (`CLIENT_ID` + `CLIENT_SECRET`)
-- Einen Discord-Server mit drei Webhooks (Log, Benachrichtigung und Spielergrenze)
+- Einen Discord-Bot mit Server-Mitgliedschaft sowie den Berechtigungen zum Anzeigen von Kanälen, Senden von Nachrichten, Einbetten von Links und Erwähnen der konfigurierten Rolle
 
 ---
 
@@ -61,11 +61,16 @@ Dann `.env` befüllen:
 | `VIO_GROUP_ID`                | Numerische Gruppen-ID eurer Gang/Squad (steht im UCP) |
 | `GANG_NAME`                   | Anzeigename der Gang                                  |
 | `GROUP_TYPE`                  | `gang` oder `squad`                                   |
-| `DISCORD_WEBHOOK`             | Webhook-URL für Betriebslogs                          |
-| `NOTIFY_DISCORD_WEBHOOK`      | Webhook-URL für Kampfbenachrichtigungen               |
-| `PLAYER_LIMIT_DISCORD_WEBHOOK` | Separater Webhook für Spielergrenzen-Benachrichtigungen |
-| `DC_PING_ROLE`                | Discord Rollen-ID für @-Pings                         |
-| `CUSTOM_ATTACK_MESSAGE`       | Optionaler Text für Angriffspings                     |
+| `DISCORD_BOT_TOKEN`           | Token des Discord-Bots                                |
+
+Nach dem Einladen des Bots werden die Zielkanäle direkt auf dem Discord-Server festgelegt:
+
+- `/tracker channel` wählt getrennte Kanäle für Betriebslogs, Angriffe/Gruppenalarme und Spielergrenzen aus.
+- `/tracker message` speichert eine eigene Nachricht für Angriffsmeldungen. Ohne Text gilt automatisch die Standardnachricht für Gang oder Squad.
+- `/tracker role` legt eine optionale Rolle für Alarm-Erwähnungen fest; ohne Rollenangabe wird das Tagging deaktiviert.
+- `/stats` zeigt die aktuelle Spielerzahl und Spielergrenze. Die Bot-Aktivität zeigt dieselben Werte laufend an.
+
+Die Konfigurationsbefehle erfordern die Discord-Berechtigung „Server verwalten“. Beim Erstellen der Bot-Einladung müssen der `bot`- und `applications.commands`-Scope gewählt werden. Für Rollen-Pings braucht der Bot außerdem die Berechtigung „@everyone, @here und alle Rollen erwähnen“.
 
 ---
 
@@ -116,7 +121,8 @@ docker-compose logs -f tracker
 │   ├── vioHandler.js     # Vio-V API Client (OAuth2, Token-Refresh)
 │   ├── crons.js          # Cron-Jobs (Angriffe, Speicher)
 │   ├── authentification.js # Auth-Middleware
-│   └── utility.js        # Discord-Webhooks, Logging
+│   ├── discordBot.js     # Discord-Bot, Slash-Commands und Kanalzustellung
+│   └── utility.js        # Discord-Nachrichten und Logging
 ├── models/               # Sequelize-Modelle (User, Role, Operation …)
 ├── routes/               # Express-Routen
 └── views/                # Handlebars-Templates

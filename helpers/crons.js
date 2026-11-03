@@ -1,10 +1,12 @@
 let cron = require('node-cron');
 const { sendLog, sendDiscordNotification, sendPlayerLimitNotification } = require('../helpers/utility');
-const { fetchOnlinePlayers, getData } = require('./vioHandler');
+const { getData } = require('./vioHandler');
 const { Op } = require('sequelize');
 const { config } = require('../config');
-const { groupType } = config;
+const { groupType, defaultAttackMessage } = config;
 const { getFactoryDetails } = require('./factories');
+const { getPlayerStats } = require('./playerStats');
+const { updatePlayerActivity } = require('./discordBot');
 const db = require('../models').sequelize;
 const moment = require('moment');
 moment.locale('de');
@@ -81,7 +83,7 @@ async function findValidUser(db, gwData) {
    if (!user) {
       gwData.invalidToken = true;
       await gwData.save();
-      sendLog('Fehler: Es wurde kein User mit einem gültigem API Token. Bitte auf der Aktionstracker Seite neu anmelden.', 2);
+      await sendLog('Fehler: Es wurde kein User mit einem gültigem API Token. Bitte auf der Aktionstracker Seite neu anmelden.', 2);
    }
    return user;
 }
@@ -120,27 +122,32 @@ async function checkGangwarAttacks() {
    let lastData = gwData.lastData ? JSON.parse(gwData.lastData) : [];
 
    // eigene Gebiete durchgehen
-   ownAreas.forEach((gw) => {
+   for (const gw of ownAreas) {
       let lastEntry = lastData.find((f) => f.ID == gw.ID);
       const index = lastData.findIndex((f) => f.ID == gw.ID);
 
       if (lastEntry) {
          if (lastEntry.LastAttack !== gw.LastAttack) {
-            sendDiscordNotification(CUSTOM_ATTACK_MESSAGE, `> Name: ${gw.Name}\n> Item: ${gw.Amount}x ${ItemList[gw.ItemID] ? ItemList[gw.ItemID] : gw.ItemID}`, 0xa83232, true);
+            await sendDiscordNotification(
+               defaultAttackMessage,
+               `> Name: ${gw.Name}\n> Item: ${gw.Amount}x ${ItemList[gw.ItemID] ? ItemList[gw.ItemID] : gw.ItemID}`,
+               0xa83232,
+               true
+            );
             lastEntry = { ID: gw.ID, LastAttack: gw.LastAttack };
             lastData[index] = lastEntry;
          }
       } else {
          const newGW = { ID: gw.ID, LastAttack: gw.LastAttack };
          lastData.push(newGW);
-         sendDiscordNotification(
+         await sendDiscordNotification(
             'Das Gebiet wurde erfolgreich eingenommen!',
             `> Name: ${gw.Name}\n> Item: ${gw.Amount}x ${ItemList[gw.ItemID] ? ItemList[gw.ItemID] : gw.ItemID}\n> Besitzer: ${gw.OldOwnerName}`,
             0x00a800,
             false
          );
       }
-   });
+   }
 
    // Einträge in lastData, die nicht mehr zu ownAreas gehören => Gebiet verloren
    for (const lastEntry of lastData.slice()) {
@@ -156,7 +163,7 @@ async function checkGangwarAttacks() {
          const areaData = allAreas.find((f) => f.ID == lastEntry.ID);
 
          if (areaData) {
-            sendDiscordNotification(
+            await sendDiscordNotification(
                'Das Gebiet wurde eingenommen!',
                `> Name: ${areaData.Name}\n> Item: ${areaData.Amount}x ${
                   ItemList[areaData.ItemID] ? ItemList[areaData.ItemID] : areaData.ItemID
@@ -188,7 +195,7 @@ async function checkFactoryAttacks() {
 
    let lastData = gwData.lastFactoryData ? JSON.parse(gwData.lastFactoryData) : [];
 
-   ownFactories.forEach((factory) => {
+   for (const factory of ownFactories) {
       const factoryDetails = getFactoryDetails(factory.ID);
       const factoryDescription = `> Fabrik: ${factoryDetails.name} (#${factory.ID})\n> Typ: ${factoryDetails.type}\n> Nächster Angriff: ${formatNextCapture(factory.NextCapture)}`;
       let lastEntry = lastData.find((f) => f.ID == factory.ID);
@@ -199,14 +206,14 @@ async function checkFactoryAttacks() {
             // Migration: altes Format ohne NextCapture → aktualisieren ohne Alert
             lastData[index] = { ID: factory.ID, NextCapture: factory.NextCapture };
          } else if (lastEntry.NextCapture !== factory.NextCapture) {
-            sendDiscordNotification('Angriff abgewehrt - Fabrik gehalten!', factoryDescription, 0x00a800, true, 'Fabrik');
+            await sendDiscordNotification('Angriff abgewehrt - Fabrik gehalten!', factoryDescription, 0x00a800, true, 'Fabrik');
             lastData[index] = { ID: factory.ID, NextCapture: factory.NextCapture };
          }
       } else {
          lastData.push({ ID: factory.ID, NextCapture: factory.NextCapture });
-         sendDiscordNotification('Die Fabrik wurde erfolgreich eingenommen!', factoryDescription, 0x00a800, false, 'Fabrik');
+         await sendDiscordNotification('Die Fabrik wurde erfolgreich eingenommen!', factoryDescription, 0x00a800, false, 'Fabrik');
       }
-   });
+   }
 
    for (const lastEntry of lastData.slice()) {
       if (ownFactories.find((f) => f.ID == lastEntry.ID)) continue;
@@ -218,7 +225,7 @@ async function checkFactoryAttacks() {
 
          const onlinePlayers = memberlist.filter((f) => f.Online == 1);
          const factoryDetails = getFactoryDetails(lastEntry.ID);
-         sendDiscordNotification(
+         await sendDiscordNotification(
             'Fabrik verloren!',
             `> Fabrik: ${factoryDetails.name} (#${lastEntry.ID})\n> Typ: ${factoryDetails.type}\n> Nächster Angriff: ${formatNextCapture(lastEntry.NextCapture)}${
                onlinePlayers.length === 0 ? '\n> Status: Offlineattack' : ''
@@ -272,9 +279,9 @@ async function checkStorageWeight() {
    gwData.notifyFullStorage = true;
    gwData.save();
    if (totalWeight >= storageData[0].maxWeight) {
-      sendDiscordNotification(`Das Gruppenlager ist voll!`, `> Gesamtgewicht: ${Math.floor(totalWeight)}\n> Maximalgewicht: ${storageData[0].maxWeight}`, 0xa83232, false);
+      await sendDiscordNotification(`Das Gruppenlager ist voll!`, `> Gesamtgewicht: ${Math.floor(totalWeight)}\n> Maximalgewicht: ${storageData[0].maxWeight}`, 0xa83232, false);
    } else if (percentage >= 90) {
-      sendDiscordNotification(
+      await sendDiscordNotification(
          `Das Gruppenlager ist fast voll!`,
          `> Gesamtgewicht: ${Math.floor(totalWeight)}\n> Maximalgewicht: ${storageData[0].maxWeight}\n> Prozent: ${Math.floor(percentage)}%`,
          0xa83232,
@@ -290,21 +297,17 @@ async function checkPlayerLimit() {
    const user = await findValidUser(db, gwData);
    if (!user) return;
 
-   const [settings, onlinePlayerCount] = await Promise.all([getData(user.id, '/system/settings'), fetchOnlinePlayers()]);
-   if (!Array.isArray(settings) || onlinePlayerCount === null) return;
-
-   const thresholdSetting = settings.find((setting) => setting.Setting === 'TotalPlayersForSkip');
-   const playerThreshold = Number(thresholdSetting?.Value);
-   if (!Number.isFinite(playerThreshold) || playerThreshold <= 0) {
-      console.error('Player limit monitoring: system/settings did not contain a valid TotalPlayersForSkip value');
-      return;
-   }
+   const stats = await getPlayerStats(user.id);
+   if (!stats) return;
+   updatePlayerActivity(stats);
+   const { onlinePlayerCount, playerThreshold } = stats;
 
    if (onlinePlayerCount >= playerThreshold) {
       if (gwData.playerLimitReached) return;
 
       try {
-         await sendPlayerLimitNotification(onlinePlayerCount, playerThreshold);
+         const notificationSent = await sendPlayerLimitNotification(onlinePlayerCount, playerThreshold);
+         if (!notificationSent) return;
       } catch (error) {
          console.error('Player limit notification failed:', error);
          return;

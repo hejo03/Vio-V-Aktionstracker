@@ -19,6 +19,7 @@ const gracefulShutdown = (signal) => {
       }
 
       try {
+         await require('../helpers/discordBot').stopDiscordBot();
          await db.sequelize.close();
          console.log('DB connection closed.');
          process.exit(0);
@@ -67,6 +68,10 @@ db.sequelize
          } catch (cronErr) {
             console.error('❌ Cron jobs failed:', cronErr);
          }
+
+         require('../helpers/discordBot')
+            .startDiscordBot()
+            .catch((discordErr) => console.error('❌ Discord bot failed to start:', discordErr));
       });
 
       server.on('error', onError);
