@@ -86,11 +86,8 @@ async function sendPlayerLimitNotification(onlinePlayerCount, playerThreshold) {
       .setTimestamp();
 
    const sent = await sendToConfiguredGuilds('playerLimitChannelId', (guildConfig) => {
-      const roleId = guildConfig.notificationRoleId;
       return {
-         content: roleId ? `<@&${roleId}>` : '',
          embeds: [embed],
-         allowedMentions: { roles: roleId ? [roleId] : [] },
       };
    });
    return sent === true;

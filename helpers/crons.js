@@ -11,13 +11,22 @@ const db = require('../models').sequelize;
 const moment = require('moment');
 moment.locale('de');
 let playerLimitCheckRunning = false;
+let factoryCheckRunning = false;
 
 //alle 1min
 cron.schedule(
    '*/30 * * * * *',
    async () => {
       if (groupType === 'squad') {
-         await checkFactoryAttacks();
+         if (factoryCheckRunning) return;
+         factoryCheckRunning = true;
+         try {
+            await checkFactoryAttacks();
+         } catch (error) {
+            console.error('Factory monitoring failed:', error);
+         } finally {
+            factoryCheckRunning = false;
+         }
       } else {
          await checkGangwarAttacks();
       }
@@ -206,7 +215,7 @@ async function checkFactoryAttacks() {
             // Migration: altes Format ohne NextCapture → aktualisieren ohne Alert
             lastData[index] = { ID: factory.ID, NextCapture: factory.NextCapture };
          } else if (lastEntry.NextCapture !== factory.NextCapture) {
-            await sendDiscordNotification('Angriff abgewehrt - Fabrik gehalten!', factoryDescription, 0x00a800, true, 'Fabrik');
+            await sendDiscordNotification('Angriff abgewehrt - Fabrik gehalten!', factoryDescription, 0x00a800, false, 'Fabrik');
             lastData[index] = { ID: factory.ID, NextCapture: factory.NextCapture };
          }
       } else {
@@ -231,7 +240,7 @@ async function checkFactoryAttacks() {
                onlinePlayers.length === 0 ? '\n> Status: Offlineattack' : ''
             }`,
             0xa83232,
-            false,
+            true,
             'Fabrik'
          );
          lastData.splice(objWithIdIndex, 1);
